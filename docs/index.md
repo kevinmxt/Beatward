@@ -23,6 +23,7 @@ PulseOps 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任�
 | `product/roadmap.md`         | 阶段、优先级、当前任务          | 迭代计划与进度更新      |
 | `plans/phase4a-ui.md`        | Phase 4A 设计共识与任务拆分     | 阶段设计回顾、spec 与 ticket 输入 |
 | `plans/phase4b-auth-data.md` | Phase 4B 认证与数据维护设计共识 | 阶段设计回顾、spec 与 ticket 输入 |
+| `plans/phase4c-multiuser-notifications.md` | Phase 4C 邀请制多用户、目标用户画像与国内通知设计共识 | 阶段设计回顾、spec 与 ticket 输入 |
 | `plans/phase5a-deployment.md` | Phase 5A 部署准备设计共识 | 阶段设计回顾、spec 与 ticket 输入 |
 | `plans/phase5a-vm-setup.md` | 本地 Multipass 演练环境安装与配置 | 环境准备与 5B 预演 |
 | `plans/phase5a-deploy-runbook.md` | 当前工程部署到本地 VM 并从 Windows 访问的逐步运行手册 | 本地部署演练、5B 上线前预演 |
