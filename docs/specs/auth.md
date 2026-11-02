@@ -15,7 +15,7 @@
 
 ### 首次引导
 
-- `app_user` 为空时，启动阶段使用 `PULSEOPS_AUTH_BOOTSTRAP_USERNAME` 与 `PULSEOPS_AUTH_BOOTSTRAP_PASSWORD_HASH` 创建唯一管理员。
+- `app_user` 为空时，启动阶段使用 `BEATWARD_AUTH_BOOTSTRAP_USERNAME` 与 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 创建唯一管理员。
 - 用户表为空且任一变量缺失、或哈希格式非法时，应用拒绝启动。
 - 用户表非空时忽略引导变量；若仍提供变量，记录 WARN 而不覆盖已有账号。
 - 引导变量只用于首次建号。忘记密码时按 [`../quality/deployment.md`](../quality/deployment.md) 的管理员密码重置流程生成新哈希、更新对应账号并重启应用，不通过重新启动覆盖。
@@ -36,7 +36,7 @@
 ### 会话属性
 
 - 会话保存在应用内存；应用重启后所有会话失效，需要重新登录。
-- Cookie 名称 `PULSEOPS_SESSION`，属性：`HttpOnly`、`SameSite=Lax`、`Path=/`；`Secure` 由 `pulseops.auth.cookie-secure` 控制。
+- Cookie 名称 `BEATWARD_SESSION`，属性：`HttpOnly`、`SameSite=Lax`、`Path=/`；`Secure` 由 `beatward.auth.cookie-secure` 控制。
 - 空闲超时 30 分钟；绝对期限 12 小时。绝对期限通过会话创建时间校验，到期后即使持续活动也必须重新登录。
 - 会话不用于心跳上报；心跳上报只接受 Heartbeat Token。
 
@@ -84,7 +84,7 @@
 - 前 5 次失败返回 401；配额用尽后的尝试（包括并发中的第 6 次及以后）返回 429 `RATE_LIMITED`，`Retry-After` 为剩余窗口秒数，向上取整且至少为 1。
 - 窗口过期后配额重置；跨过窗口边界才结算的旧尝试不写入新窗口。
 - 成功登录只清除当前键的状态，不影响其他独立键；计数保存在内存。
-- 跟踪键上限默认 10,000，可通过 `pulseops.auth.rate-limit.max-keys`（环境变量 `PULSEOPS_AUTH_RATE_LIMIT_MAX_KEYS`）调整。达到上限时先回收已过期窗口；若仍被有效窗口占满，则拒绝未跟踪的新键并返回 429 `RATE_LIMITED`，`Retry-After` 为窗口长度（900 秒）。
+- 跟踪键上限默认 10,000，可通过 `beatward.auth.rate-limit.max-keys`（环境变量 `BEATWARD_AUTH_RATE_LIMIT_MAX_KEYS`）调整。达到上限时先回收已过期窗口；若仍被有效窗口占满，则拒绝未跟踪的新键并返回 429 `RATE_LIMITED`，`Retry-After` 为窗口长度（900 秒）。
 - 容量拒绝不驱逐仍在窗口内的键；容量满时已有键继续按原配额执行。
 - 容量拒绝记录 WARN 日志，字段为远端地址、跟踪键数量与 `traceId`，不记录用户名或其他凭据。
 - 可用性权衡：容量耗尽期间新键登录会被拒绝，直到有窗口过期；单管理员场景下正常登录只产生一个键，影响有限；面对高基数键的攻击时优先保证内存上限与既有键可用，而不是随机驱逐有效窗口。容量拒绝时的过期回收最多每秒触发一次，避免高频拒绝放大全量扫描开销。
@@ -111,7 +111,7 @@
 
 1. `app_user` 为空且缺少引导用户名或哈希。
 2. 引导用户名不符合格式，或哈希不以 `{bcrypt}$2` 开头、BCrypt 格式非法。
-3. `server.address` 不是回环地址（`127.0.0.1`、`::1`、`localhost`）且 `pulseops.auth.cookie-secure=false`。
+3. `server.address` 不是回环地址（`127.0.0.1`、`::1`、`localhost`）且 `beatward.auth.cookie-secure=false`。
 4. `app_user` 非空且仍提供引导变量：忽略变量并记录 WARN。
 
 Phase 5 在容器内监听 `0.0.0.0` 时会触发第 3 条；必须显式启用 Secure Cookie，并由前置代理终止 TLS。
@@ -128,7 +128,7 @@ docker run --rm httpd:2.4-alpine \
 将输出加上 `{bcrypt}` 前缀后写入环境变量，使用单引号避免 shell 展开 `$`：
 
 ```bash
-export PULSEOPS_AUTH_BOOTSTRAP_PASSWORD_HASH='{bcrypt}$2y$12$...'
+export BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH='{bcrypt}$2y$12$...'
 ```
 
 ## 日志与敏感信息

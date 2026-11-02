@@ -6,11 +6,11 @@ set -euo pipefail
 # Usage: scripts/smoke-test.sh [--url URL] [--resolve HOST:PORT:ADDR] [--insecure]
 #
 # Environment:
-#   SMOKE_BASE_URL  Base URL (default: https://pulseops.test)
+#   SMOKE_BASE_URL  Base URL (default: https://beatward.test)
 #   SMOKE_RESOLVE   Optional curl --resolve value
 #   SMOKE_INSECURE  1 to skip TLS verification (local internal CA only)
 
-BASE_URL="${SMOKE_BASE_URL:-https://pulseops.test}"
+BASE_URL="${SMOKE_BASE_URL:-https://beatward.test}"
 RESOLVE="${SMOKE_RESOLVE:-}"
 INSECURE="${SMOKE_INSECURE:-0}"
 

@@ -1,4 +1,4 @@
-# PulseOps
+# Beatward
 
 面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台。本文件只定义领域语言，不记录实现细节。
 
@@ -93,7 +93,7 @@ _Avoid_: Provider、Integration
 ### 认证与数据维护
 
 **Admin Account（管理员账号）**：
-PulseOps 中可登录管理界面的身份；MVP 只有一个，未来可以扩展为多个账号与角色。
+Beatward 中可登录管理界面的身份；MVP 只有一个，未来可以扩展为多个账号与角色。
 _Avoid_: User、Operator、Login
 
 **Role（角色）**：

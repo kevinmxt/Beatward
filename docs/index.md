@@ -1,8 +1,10 @@
-# PulseOps 文档索引
+# Beatward 文档索引
 
 ## 项目一句话
 
-PulseOps 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台，支持故障事件、恢复判断和通知。
+Beatward 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台，支持故障事件、恢复判断和通知。
+
+> 本项目曾用名 PulseOps，自 2026-11 起更名为 Beatward。Phase 1–5A 验收记录、历史评审与已完成阶段的设计文档（如 phase4a/4b）保留原名，仅作历史证据。
 
 ## 渐进式披露规则
 
@@ -46,6 +48,7 @@ PulseOps 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任�
 | `quality/deployment.md`      | 生产拓扑、Compose、HTTPS、日志、备份、发布回滚、加固与外部监控 | 部署和运维          |
 | `adr/README.md`              | 架构决策记录规则             | 重大技术决策         |
 | `adr/0010-production-topology-and-trusted-proxy.md` | 生产拓扑、网络边界、可信代理与备份自动化决策 | 部署架构与安全边界 |
+| `adr/0011-rename-to-beatward.md` | 项目全面更名与旧环境迁移决策 | 标识更名、环境迁移与回退 |
 
 ## 规范冲突处理
 

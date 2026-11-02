@@ -4,7 +4,7 @@
 	skip_install_trust
 }
 
-{$SITE_ADDRESS:pulseops.test} {
+{$SITE_ADDRESS:beatward.test} {
 	tls {$TLS_ISSUER:internal}
 
 	encode zstd gzip

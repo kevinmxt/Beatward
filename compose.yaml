@@ -1,16 +1,18 @@
+name: beatward
+
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: pulseops-postgres
+    container_name: beatward-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-pulseops}
-      POSTGRES_USER: ${POSTGRES_USER:-pulseops}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulseops}
+      POSTGRES_DB: ${POSTGRES_DB:-beatward}
+      POSTGRES_USER: ${POSTGRES_USER:-beatward}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-beatward}
       TZ: UTC
     ports:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - pulseops-postgres-data:/var/lib/postgresql/data
+      - beatward-postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -19,4 +21,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  pulseops-postgres-data:
+  beatward-postgres-data:

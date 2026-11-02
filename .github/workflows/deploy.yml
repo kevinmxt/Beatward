@@ -47,7 +47,7 @@ jobs:
           context: backend
           file: backend/Dockerfile
           push: false
-          tags: pulseops-backend:ci
+          tags: beatward-backend:ci
           cache-from: type=gha,scope=backend
           cache-to: type=gha,mode=max,scope=backend
 
@@ -58,6 +58,6 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           push: false
-          tags: pulseops-caddy:ci
+          tags: beatward-caddy:ci
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend

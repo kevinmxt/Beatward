@@ -17,7 +17,7 @@ Environment:
   COMPOSE_SERVICE  Compose service running PostgreSQL (default: postgres)
 
 Example:
-  scripts/restore.sh ./backups/pulseops-20261026T120000Z.dump pulseops_restore
+  scripts/restore.sh ./backups/beatward-20261026T120000Z.dump beatward_restore
 EOF
 }
 
@@ -69,7 +69,7 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 source_db="$(docker compose exec -T "${COMPOSE_SERVICE}" \
-    sh -c 'printf %s "${POSTGRES_DB:-pulseops}"' | tr -d '\r')"
+    sh -c 'printf %s "${POSTGRES_DB:-beatward}"' | tr -d '\r')"
 
 case "${target_db}" in
     postgres|template0|template1)
@@ -90,7 +90,7 @@ if ! docker compose exec -T "${COMPOSE_SERVICE}" pg_restore --list < "${backup_f
 fi
 
 exists="$(docker compose exec -T "${COMPOSE_SERVICE}" \
-    sh -c 'exec psql -U "${POSTGRES_USER:-pulseops}" -d postgres -tAc "$1"' \
+    sh -c 'exec psql -U "${POSTGRES_USER:-beatward}" -d postgres -tAc "$1"' \
     sh "SELECT 1 FROM pg_database WHERE datname = '${target_db}'" | tr -d '[:space:]')"
 
 if [[ -n "${exists}" ]]; then
@@ -100,22 +100,22 @@ if [[ -n "${exists}" ]]; then
     fi
     echo "Dropping existing database '${target_db}' (--force)..."
     docker compose exec -T "${COMPOSE_SERVICE}" \
-        sh -c 'exec psql -U "${POSTGRES_USER:-pulseops}" -d postgres -v ON_ERROR_STOP=1 -c "$1"' \
+        sh -c 'exec psql -U "${POSTGRES_USER:-beatward}" -d postgres -v ON_ERROR_STOP=1 -c "$1"' \
         sh "DROP DATABASE \"${target_db}\" WITH (FORCE);"
 fi
 
 echo "Creating database '${target_db}'..."
 docker compose exec -T "${COMPOSE_SERVICE}" \
-    sh -c 'exec psql -U "${POSTGRES_USER:-pulseops}" -d postgres -v ON_ERROR_STOP=1 -c "$1"' \
+    sh -c 'exec psql -U "${POSTGRES_USER:-beatward}" -d postgres -v ON_ERROR_STOP=1 -c "$1"' \
     sh "CREATE DATABASE \"${target_db}\";"
 
 echo "Restoring '${backup_file}' into '${target_db}'..."
 if ! docker compose exec -T "${COMPOSE_SERVICE}" \
-    sh -c 'exec pg_restore -U "${POSTGRES_USER:-pulseops}" -d "$1" --no-owner --no-privileges --exit-on-error' \
+    sh -c 'exec pg_restore -U "${POSTGRES_USER:-beatward}" -d "$1" --no-owner --no-privileges --exit-on-error' \
     sh "${target_db}" < "${backup_file}"; then
     echo "error: restore failed; dropping partially restored database '${target_db}'" >&2
     docker compose exec -T "${COMPOSE_SERVICE}" \
-        sh -c 'exec psql -U "${POSTGRES_USER:-pulseops}" -d postgres -v ON_ERROR_STOP=1 -c "$1"' \
+        sh -c 'exec psql -U "${POSTGRES_USER:-beatward}" -d postgres -v ON_ERROR_STOP=1 -c "$1"' \
         sh "DROP DATABASE \"${target_db}\" WITH (FORCE);" || true
     exit 1
 fi
@@ -123,8 +123,8 @@ fi
 echo "Restore completed: ${backup_file} -> ${target_db}"
 echo "For a read-only check, start the application with scheduling disabled:"
 echo "  cd backend && DB_URL=jdbc:postgresql://localhost:5432/${target_db} \\"
-echo "    PULSEOPS_PROBE_SCHEDULING_ENABLED=false \\"
-echo "    PULSEOPS_HEARTBEAT_SCHEDULING_ENABLED=false \\"
-echo "    PULSEOPS_NOTIFICATION_SCHEDULING_ENABLED=false \\"
-echo "    PULSEOPS_CLEANUP_SCHEDULING_ENABLED=false \\"
+echo "    BEATWARD_PROBE_SCHEDULING_ENABLED=false \\"
+echo "    BEATWARD_HEARTBEAT_SCHEDULING_ENABLED=false \\"
+echo "    BEATWARD_NOTIFICATION_SCHEDULING_ENABLED=false \\"
+echo "    BEATWARD_CLEANUP_SCHEDULING_ENABLED=false \\"
 echo "    ./mvnw spring-boot:run"

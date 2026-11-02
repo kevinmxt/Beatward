@@ -15,7 +15,7 @@ COMPOSE_SERVICE="${COMPOSE_SERVICE:-postgres}"
 AGE_RECIPIENT="${AGE_RECIPIENT:-}"
 BACKUP_RCLONE_REMOTE="${BACKUP_RCLONE_REMOTE:-}"
 BACKUP_RCLONE_PATH="${BACKUP_RCLONE_PATH:-}"
-RCLONE_CONFIG="${RCLONE_CONFIG:-/etc/pulseops/rclone.conf}"
+RCLONE_CONFIG="${RCLONE_CONFIG:-/etc/beatward/rclone.conf}"
 HEALTHCHECKS_PING_URL="${HEALTHCHECKS_PING_URL:-}"
 
 if ! [[ "${BACKUP_RETENTION_COUNT}" =~ ^[1-9][0-9]*$ ]]; then
@@ -65,7 +65,7 @@ if [[ ! -d "${BACKUP_DIR}" ]]; then
 fi
 
 db_name="$(docker compose exec -T "${COMPOSE_SERVICE}" \
-    sh -c 'printf %s "${POSTGRES_DB:-pulseops}"' | tr -d '\r')"
+    sh -c 'printf %s "${POSTGRES_DB:-beatward}"' | tr -d '\r')"
 if [[ -z "${db_name}" ]]; then
     echo "error: could not read POSTGRES_DB from service ${COMPOSE_SERVICE}" >&2
     exit 1
@@ -87,7 +87,7 @@ trap cleanup EXIT
 
 echo "Backing up database '${db_name}' from service '${COMPOSE_SERVICE}'..."
 docker compose exec -T "${COMPOSE_SERVICE}" \
-    sh -c 'exec pg_dump -U "${POSTGRES_USER:-pulseops}" -d "${POSTGRES_DB:-pulseops}" --format=custom' \
+    sh -c 'exec pg_dump -U "${POSTGRES_USER:-beatward}" -d "${POSTGRES_DB:-beatward}" --format=custom' \
     > "${tmp_file}"
 
 if [[ ! -s "${tmp_file}" ]]; then

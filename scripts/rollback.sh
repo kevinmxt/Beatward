@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
-ENV_FILE="${PULSEOPS_ENV_FILE:-/etc/pulseops/pulseops.env}"
-STATE_DIR="${PULSEOPS_STATE_DIR:-${ROOT_DIR}}"
+ENV_FILE="${BEATWARD_ENV_FILE:-/etc/beatward/beatward.env}"
+STATE_DIR="${BEATWARD_STATE_DIR:-${ROOT_DIR}}"
 HEALTH_TIMEOUT="${ROLLBACK_HEALTH_TIMEOUT_SECONDS:-${DEPLOY_HEALTH_TIMEOUT_SECONDS:-120}}"
 DRY_RUN=0
 TARGET=""
@@ -21,8 +21,8 @@ schema rank is older than the current database schema, or when its schema
 metadata is missing.
 
 Environment:
-  PULSEOPS_ENV_FILE               Production env file
-  PULSEOPS_STATE_DIR              Deployment state directory
+  BEATWARD_ENV_FILE               Production env file
+  BEATWARD_STATE_DIR              Deployment state directory
   ROLLBACK_HEALTH_TIMEOUT_SECONDS Health gate timeout (default 120)
 EOF
 }
@@ -74,7 +74,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-${ROOT_DIR}/compose.prod.yaml}"
 [[ -f "${COMPOSE_FILE}" ]] || die "compose file not found: ${COMPOSE_FILE}"
 export COMPOSE_FILE
 if [[ -z "${COMPOSE_PROJECT_NAME:-}" ]]; then
-    export COMPOSE_PROJECT_NAME=pulseops
+    export COMPOSE_PROJECT_NAME=beatward
 fi
 COMPOSE=(docker compose -f "${COMPOSE_FILE}")
 
@@ -127,13 +127,13 @@ wait_healthy() {
 }
 
 smoke() {
-    local site="${SITE_ADDRESS:-pulseops.test}"
+    local site="${SITE_ADDRESS:-beatward.test}"
     local args=(--url "https://${site}")
     if [[ "${TLS_ISSUER:-internal}" == "internal" ]]; then
         args+=(--insecure)
     fi
-    if [[ "${site}" == "pulseops.test" ]]; then
-        args+=(--resolve "pulseops.test:443:127.0.0.1")
+    if [[ "${site}" == "beatward.test" ]]; then
+        args+=(--resolve "beatward.test:443:127.0.0.1")
     fi
     "${ROOT_DIR}/scripts/smoke-test.sh" "${args[@]}"
 }
@@ -171,7 +171,7 @@ fi
 
 log "Rollback target: ${TARGET} (current: ${CURRENT_TAG})"
 
-for repo in pulseops-backend pulseops-caddy; do
+for repo in beatward-backend beatward-caddy; do
     if ! docker image inspect "${repo}:${TARGET}" >/dev/null 2>&1; then
         die "image not found: ${repo}:${TARGET}"
     fi

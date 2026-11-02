@@ -6,8 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
-ENV_FILE="${PULSEOPS_ENV_FILE:-/etc/pulseops/pulseops.env}"
-STATE_DIR="${PULSEOPS_STATE_DIR:-${ROOT_DIR}}"
+ENV_FILE="${BEATWARD_ENV_FILE:-/etc/beatward/beatward.env}"
+STATE_DIR="${BEATWARD_STATE_DIR:-${ROOT_DIR}}"
 HEALTH_TIMEOUT="${DEPLOY_HEALTH_TIMEOUT_SECONDS:-120}"
 DRY_RUN=0
 TAG=""
@@ -17,8 +17,8 @@ usage() {
 Usage: sudo scripts/deploy.sh [--dry-run] [--tag <tag>]
 
 Environment:
-  PULSEOPS_ENV_FILE              Production env file (default /etc/pulseops/pulseops.env)
-  PULSEOPS_STATE_DIR             Deployment state directory (default repo root)
+  BEATWARD_ENV_FILE              Production env file (default /etc/beatward/beatward.env)
+  BEATWARD_STATE_DIR             Deployment state directory (default repo root)
   DEPLOY_TAG                     Image tag when --tag is omitted
   DEPLOY_HEALTH_TIMEOUT_SECONDS  Health gate timeout (default 120)
 EOF
@@ -72,7 +72,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-${ROOT_DIR}/compose.prod.yaml}"
 [[ -f "${COMPOSE_FILE}" ]] || die "compose file not found: ${COMPOSE_FILE}"
 export COMPOSE_FILE
 if [[ -z "${COMPOSE_PROJECT_NAME:-}" ]]; then
-    export COMPOSE_PROJECT_NAME=pulseops
+    export COMPOSE_PROJECT_NAME=beatward
 fi
 COMPOSE=(docker compose -f "${COMPOSE_FILE}")
 
@@ -137,13 +137,13 @@ wait_healthy() {
 }
 
 smoke() {
-    local site="${SITE_ADDRESS:-pulseops.test}"
+    local site="${SITE_ADDRESS:-beatward.test}"
     local args=(--url "https://${site}")
     if [[ "${TLS_ISSUER:-internal}" == "internal" ]]; then
         args+=(--insecure)
     fi
-    if [[ "${site}" == "pulseops.test" ]]; then
-        args+=(--resolve "pulseops.test:443:127.0.0.1")
+    if [[ "${site}" == "beatward.test" ]]; then
+        args+=(--resolve "beatward.test:443:127.0.0.1")
     fi
     "${ROOT_DIR}/scripts/smoke-test.sh" "${args[@]}"
 }
@@ -300,8 +300,8 @@ chmod 644 "${STATE_DIR}/.deployed-tag" "${STATE_DIR}/.previous-tag" \
     "${STATE_DIR}/.deployed-tags/${TAG}.schema"
 
 log "Cleaning old image tags"
-cleanup_tags "pulseops-backend"
-cleanup_tags "pulseops-caddy"
+cleanup_tags "beatward-backend"
+cleanup_tags "beatward-caddy"
 log "Pruning build cache"
 if ! docker builder prune -f >/dev/null 2>&1; then
     log "warning: build cache prune failed"

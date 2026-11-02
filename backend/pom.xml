@@ -11,10 +11,10 @@
         <relativePath/>
     </parent>
 
-    <groupId>dev.pulseops</groupId>
-    <artifactId>pulseops-backend</artifactId>
+    <groupId>dev.beatward</groupId>
+    <artifactId>beatward-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>PulseOps</name>
+    <name>Beatward</name>
     <description>Lightweight API and heartbeat monitoring platform</description>
 
     <properties>

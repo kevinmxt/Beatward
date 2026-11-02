@@ -1,0 +1,11 @@
+[Unit]
+Description=Beatward backup failure notification
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/beatward/beatward.env
+WorkingDirectory=/opt/beatward
+NoNewPrivileges=true
+ExecStart=/opt/beatward/scripts/backup-failure.sh

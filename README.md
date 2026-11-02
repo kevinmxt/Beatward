@@ -1,4 +1,4 @@
-# PulseOps
+# Beatward
 
 面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台。
 
@@ -38,8 +38,8 @@ Maven 由 Maven Wrapper 提供，无需单独安装。
 2. 首次启动前设置引导管理员（仅当 `app_user` 为空时使用）：
 
    ```bash
-   export PULSEOPS_AUTH_BOOTSTRAP_USERNAME='admin'
-   export PULSEOPS_AUTH_BOOTSTRAP_PASSWORD_HASH='{bcrypt}$2y$12$...'
+   export BEATWARD_AUTH_BOOTSTRAP_USERNAME='admin'
+   export BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH='{bcrypt}$2y$12$...'
    ```
 
    使用 Docker 生成 BCrypt 哈希（成本因子 12）：
@@ -90,56 +90,56 @@ Maven 由 Maven Wrapper 提供，无需单独安装。
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/pulseops` | 数据库连接串 |
-| `DB_USERNAME` | `pulseops` | 数据库账号 |
-| `DB_PASSWORD` | `pulseops` | 数据库密码，非本地环境必须覆盖 |
+| `DB_URL` | `jdbc:postgresql://localhost:5432/beatward` | 数据库连接串 |
+| `DB_USERNAME` | `beatward` | 数据库账号 |
+| `DB_PASSWORD` | `beatward` | 数据库密码，非本地环境必须覆盖 |
 | `SERVER_PORT` | `8080` | HTTP 端口 |
 | `SERVER_ADDRESS` | `127.0.0.1` | 监听地址；公网发布前保持回环地址，Phase 5 由前置代理终止 TLS（见 [`docs/quality/deployment.md`](docs/quality/deployment.md)） |
-| `PULSEOPS_AUTH_BOOTSTRAP_USERNAME` | 空 | 首次启动创建管理员的用户名；仅当 `app_user` 为空时生效 |
-| `PULSEOPS_AUTH_BOOTSTRAP_PASSWORD_HASH` | 空 | 首次启动管理员的 `{bcrypt}` 哈希；必须与用户名同时配置 |
-| `PULSEOPS_AUTH_COOKIE_SECURE` | `false` | 会话与 CSRF Cookie 的 `Secure` 属性；非回环监听时必须为 `true` |
-| `PULSEOPS_AUTH_RATE_LIMIT_MAX_KEYS` | `10000` | 登录限流内存中跟踪的最大键数量；达到上限时拒绝新键，详见 [`docs/specs/auth.md`](docs/specs/auth.md) |
-| `PULSEOPS_TELEGRAM_BOT_TOKEN` | 空（通知关闭） | Telegram Bot Token；必须与 Chat ID 同时配置 |
-| `PULSEOPS_TELEGRAM_CHAT_ID` | 空（通知关闭） | Telegram Chat ID |
-| `PULSEOPS_TELEGRAM_API_BASE_URL` | `https://api.telegram.org` | Telegram API 基地址，仅用于测试或代理 |
+| `BEATWARD_AUTH_BOOTSTRAP_USERNAME` | 空 | 首次启动创建管理员的用户名；仅当 `app_user` 为空时生效 |
+| `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` | 空 | 首次启动管理员的 `{bcrypt}` 哈希；必须与用户名同时配置 |
+| `BEATWARD_AUTH_COOKIE_SECURE` | `false` | 会话与 CSRF Cookie 的 `Secure` 属性；非回环监听时必须为 `true` |
+| `BEATWARD_AUTH_RATE_LIMIT_MAX_KEYS` | `10000` | 登录限流内存中跟踪的最大键数量；达到上限时拒绝新键，详见 [`docs/specs/auth.md`](docs/specs/auth.md) |
+| `BEATWARD_TELEGRAM_BOT_TOKEN` | 空（通知关闭） | Telegram Bot Token；必须与 Chat ID 同时配置 |
+| `BEATWARD_TELEGRAM_CHAT_ID` | 空（通知关闭） | Telegram Chat ID |
+| `BEATWARD_TELEGRAM_API_BASE_URL` | `https://api.telegram.org` | Telegram API 基地址，仅用于测试或代理 |
 | `HEARTBEAT_REQUIRE_HTTPS` | `false` | 心跳上报是否要求 HTTPS；可信代理、客户端地址与 HTTPS 判定规则见 [`docs/specs/auth.md`](docs/specs/auth.md#可信代理与客户端地址) |
 
 数据库结构变更一律通过 `backend/src/main/resources/db/migration/` 下的 Flyway 迁移完成，不使用 Hibernate 自动建表。
 
 ### 探测调度
 
-以下 Spring 配置项位于 `pulseops.probe` 前缀下，可通过环境变量或启动参数覆盖：
+以下 Spring 配置项位于 `beatward.probe` 前缀下，可通过环境变量或启动参数覆盖：
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
-| `pulseops.probe.tick-interval` | `1s` | 调度 tick 的 fixedDelay；最小 100ms |
-| `pulseops.probe.batch-size` | `200` | 每次 tick 最多提交的到期 Monitor 数 |
-| `pulseops.probe.pool-size` | `8` | 探测线程数 |
-| `pulseops.probe.queue-capacity` | `100` | 探测任务队列容量；被拒绝的任务在下一 tick 重试 |
-| `pulseops.probe.scheduling-enabled` | `true` | 是否启用自动调度；集成测试中关闭并手动调用 tick |
+| `beatward.probe.tick-interval` | `1s` | 调度 tick 的 fixedDelay；最小 100ms |
+| `beatward.probe.batch-size` | `200` | 每次 tick 最多提交的到期 Monitor 数 |
+| `beatward.probe.pool-size` | `8` | 探测线程数 |
+| `beatward.probe.queue-capacity` | `100` | 探测任务队列容量；被拒绝的任务在下一 tick 重试 |
+| `beatward.probe.scheduling-enabled` | `true` | 是否启用自动调度；集成测试中关闭并手动调用 tick |
 
 ### 心跳扫描
 
-以下配置项位于 `pulseops.heartbeat` 前缀下：
+以下配置项位于 `beatward.heartbeat` 前缀下：
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
-| `pulseops.heartbeat.tick-interval` | `5s` | 心跳超时扫描的 fixedDelay；最小 100ms |
-| `pulseops.heartbeat.batch-size` | `100` | 每次 tick 最多处理的到期心跳监控项数（1–500） |
-| `pulseops.heartbeat.scheduling-enabled` | `true` | 是否启用自动扫描；集成测试中关闭并手动调用 `HeartbeatScheduler.tick()` |
-| `pulseops.heartbeat.require-https` | `false` | 心跳上报是否强制 HTTPS |
+| `beatward.heartbeat.tick-interval` | `5s` | 心跳超时扫描的 fixedDelay；最小 100ms |
+| `beatward.heartbeat.batch-size` | `100` | 每次 tick 最多处理的到期心跳监控项数（1–500） |
+| `beatward.heartbeat.scheduling-enabled` | `true` | 是否启用自动扫描；集成测试中关闭并手动调用 `HeartbeatScheduler.tick()` |
+| `beatward.heartbeat.require-https` | `false` | 心跳上报是否强制 HTTPS |
 
 心跳扫描使用独立的单线程调度器 `heartbeatTickScheduler`，与探测、通知互不阻塞。
 
 ### 通知投递
 
-以下配置项位于 `pulseops.notification` 前缀下：
+以下配置项位于 `beatward.notification` 前缀下：
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
-| `pulseops.notification.dispatch-interval` | `5s` | 投递轮询的 fixedDelay |
-| `pulseops.notification.batch-size` | `50` | 每轮最多处理的投递数 |
-| `pulseops.notification.scheduling-enabled` | `true` | 是否启用自动投递；集成测试中关闭并手动调用 |
+| `beatward.notification.dispatch-interval` | `5s` | 投递轮询的 fixedDelay |
+| `beatward.notification.batch-size` | `50` | 每轮最多处理的投递数 |
+| `beatward.notification.scheduling-enabled` | `true` | 是否启用自动投递；集成测试中关闭并手动调用 |
 
 投递与探测各自使用独立的单线程调度器（`probeTickScheduler` / `notificationTickScheduler`），一个 tick 阻塞不会影响另一个；新增 ticker 必须声明自己的调度器，测试会校验非空且全局唯一。
 
@@ -147,17 +147,17 @@ Maven 由 Maven Wrapper 提供，无需单独安装。
 
 ### 历史数据清理
 
-以下配置项位于 `pulseops.cleanup` 前缀下：
+以下配置项位于 `beatward.cleanup` 前缀下：
 
 | 配置项 | 默认值 | 说明 |
 |---|---|---|
-| `pulseops.cleanup.enabled` | `true` | 是否执行清理 |
-| `pulseops.cleanup.scheduling-enabled` | `true` | 是否启用自动调度；集成测试中关闭并手动调用 `CleanupService.tick()` |
-| `pulseops.cleanup.tick-interval` | `1h` | 清理 tick 的 fixedDelay（1m–24h） |
-| `pulseops.cleanup.check-result-retention-days` | `30` | CheckResult 保留天数（1–3650） |
-| `pulseops.cleanup.resolved-incident-retention-days` | `90` | 已解决 Incident 保留天数（1–3650） |
-| `pulseops.cleanup.batch-size` | `1000` | 单批删除行数（1–10000） |
-| `pulseops.cleanup.max-batches-per-tick` | `50` | 单 tick 最多批次，由两类数据共享（1–1000） |
+| `beatward.cleanup.enabled` | `true` | 是否执行清理 |
+| `beatward.cleanup.scheduling-enabled` | `true` | 是否启用自动调度；集成测试中关闭并手动调用 `CleanupService.tick()` |
+| `beatward.cleanup.tick-interval` | `1h` | 清理 tick 的 fixedDelay（1m–24h） |
+| `beatward.cleanup.check-result-retention-days` | `30` | CheckResult 保留天数（1–3650） |
+| `beatward.cleanup.resolved-incident-retention-days` | `90` | 已解决 Incident 保留天数（1–3650） |
+| `beatward.cleanup.batch-size` | `1000` | 单批删除行数（1–10000） |
+| `beatward.cleanup.max-batches-per-tick` | `50` | 单 tick 最多批次，由两类数据共享（1–1000） |
 
 清理在独立 `cleanupTickScheduler` 上执行，单批使用独立短事务、批间暂停 50ms；`OPEN` Incident 永不按时间清理，已解决 Incident 的投递随外键级联删除。详见 [ADR-0009](docs/adr/0009-data-retention-policy.md)。
 
@@ -165,7 +165,7 @@ Maven 由 Maven Wrapper 提供，无需单独安装。
 
 ```bash
 ./scripts/backup.sh
-./scripts/restore.sh ./backups/pulseops-<timestamp>.dump pulseops_restore
+./scripts/restore.sh ./backups/beatward-<timestamp>.dump beatward_restore
 ```
 
 脚本通过 `docker compose exec -T` 在容器内执行 `pg_dump`/`pg_restore`，宿主机无需安装 PostgreSQL 客户端。备份保留份数、覆盖保护、恢复演练要求与敏感数据提示见 [`docs/quality/deployment.md`](docs/quality/deployment.md)。

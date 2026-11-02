@@ -24,7 +24,7 @@ Phase 5A 的目标是完成部署配置、脚本和文档，并在本地 Linux �
 ## 现状事实
 
 - 仓库只有开发用 `compose.yaml`，且仅包含 PostgreSQL；没有后端或前端 Dockerfile，没有 Caddy 配置。
-- 后端为 Spring Boot 3.5 / Java 21，默认 `server.address=127.0.0.1`；非回环监听时必须开启 `pulseops.auth.cookie-secure`，否则拒绝启动。
+- 后端为 Spring Boot 3.5 / Java 21，默认 `server.address=127.0.0.1`；非回环监听时必须开启 `beatward.auth.cookie-secure`，否则拒绝启动。
 - `/actuator/health` 已公开；`/actuator/metrics` 需要 `ADMIN`。
 - 前端为 Vue 3 + Vite，使用相对路径 `/api`，开发时由 Vite 代理到 `localhost:8080`。
 - `scripts/backup.sh` 与 `scripts/restore.sh` 已通过 4B 演练；定时调度、加密、异地存放与失败告警尚未实现。
@@ -41,7 +41,7 @@ Phase 5A 的目标是完成部署配置、脚本和文档，并在本地 Linux �
 | 镜像构建 | 在目标机器上 `docker compose -f compose.prod.yaml build`；镜像 tag 使用 Git short SHA；不引入镜像仓库 |
 | Compose 组织 | 新增 `compose.prod.yaml`；保留 `compose.yaml` 仅用于本地开发；脚本遵守 `COMPOSE_FILE` |
 | 本地演练环境 | Multipass + Hyper-V，Ubuntu 24.04 LTS，2 vCPU / 4 GB / 40 GB；数据目录放 `G:\work\VM\Multipass`；5A 验收与 5B 预演共用 |
-| 本地 HTTPS | 单一 Caddyfile，用 `SITE_ADDRESS` 与 `TLS_ISSUER` 环境变量区分 5A/5B；5A 使用 `pulseops.test` + `tls internal` |
+| 本地 HTTPS | 单一 Caddyfile，用 `SITE_ADDRESS` 与 `TLS_ISSUER` 环境变量区分 5A/5B；5A 使用 `beatward.test` + `tls internal` |
 | Caddy 端口 | 容器内监听 8080/8443，宿主发布 80/443；镜像内创建 uid 10002 用户并以非 root 运行 |
 | backend 加固 | 非 root、只读根文件系统 + tmpfs `/tmp`、`cap_drop: [ALL]`；不发布宿主端口 |
 | postgres 加固 | 使用官方镜像默认 `postgres` 用户与数据卷；不使用 `cap_drop: ALL`（会破坏入口脚本降权） |
@@ -50,7 +50,7 @@ Phase 5A 的目标是完成部署配置、脚本和文档，并在本地 Linux �
 | 可信代理 | 后端启用 `server.forward-headers-strategy=native`，Tomcat `remoteip.internal-proxies` 只信任 `edge` 子网 |
 | 日志 | 全部输出 stdout/stderr；Docker `json-file` 驱动 `max-size=10m`、`max-file=5`；Caddy 只开错误日志 |
 | 备份调度 | systemd timer，每日 03:17 UTC，`Persistent=true` |
-| 备份加密 | `age` 非对称加密；私钥 `/etc/pulseops/age.key`（600），离线备份一份 |
+| 备份加密 | `age` 非对称加密；私钥 `/etc/beatward/age.key`（600），离线备份一份 |
 | 异地存放 | `rclone` 推送 S3 兼容对象存储；5A 用本地 rclone remote 验证，5B 接真实桶 |
 | 备份保留 | 本地 7 份；异地 14 份 |
 | 备份告警 | 成功后 ping Healthchecks.io 成功 URL；失败由 `OnFailure` 单元 ping `/fail` |
@@ -62,7 +62,7 @@ Phase 5A 的目标是完成部署配置、脚本和文档，并在本地 Linux �
 | SSH | 仅密钥；禁用密码与交互式认证；root 仅密钥登录；保持 22 端口；不引入 fail2ban |
 | CI | PR 只跑 `compose config` 与 `caddy validate`；master 额外构建前后端镜像（不推送） |
 | 脚本入库 | 提交 `scripts/provision-vm.sh`；Windows 宿主配置只保留文档 |
-| 生产路径 | 代码 `/opt/pulseops`；环境文件 `/etc/pulseops/pulseops.env`（600）；备份 `/var/backups/pulseops` |
+| 生产路径 | 代码 `/opt/beatward`；环境文件 `/etc/beatward/beatward.env`（600）；备份 `/var/backups/beatward` |
 | 镜像保留 | 最近 5 个 tag；部署后清理更旧 tag 与 build cache |
 | 文档 | 新增 ADR-0010、本文件与 `quality/phase5a-acceptance.md`；更新 `deployment.md`、`auth.md`、`index.md`、README、roadmap |
 
@@ -70,7 +70,7 @@ Phase 5A 的目标是完成部署配置、脚本和文档，并在本地 Linux �
 
 ```text
 Windows 浏览器 / 外部监控
-        │ HTTPS 443（5A: pulseops.test + 内部 CA；5B: 真实域名 + ACME）
+        │ HTTPS 443（5A: beatward.test + 内部 CA；5B: 真实域名 + ACME）
         ▼
 ┌──────────────────────────────────────────────┐
 │ 宿主 / VM                                     │
@@ -88,7 +88,7 @@ Windows 浏览器 / 外部监控
 ```
 
 - 宿主只发布 80/443；backend 与 postgres 不发布任何宿主端口。
-- backend 在容器内监听 `0.0.0.0:8080`，因此必须显式设置 `PULSEOPS_AUTH_COOKIE_SECURE=true`，启动校验才会通过。
+- backend 在容器内监听 `0.0.0.0:8080`，因此必须显式设置 `BEATWARD_AUTH_COOKIE_SECURE=true`，启动校验才会通过。
 - Caddy 是唯一对外入口；应用自身仍执行认证与 CSRF，不依赖代理授权。
 - `/actuator/health*` 只反代公开健康端点；`/actuator/metrics` 不由 Caddy 暴露。
 
@@ -109,21 +109,21 @@ Windows 浏览器 / 外部监控
 
 ### compose.prod.yaml
 
-- 项目名固定 `pulseops`；三个服务：`postgres`、`backend`、`caddy`。
+- 项目名固定 `beatward`；三个服务：`postgres`、`backend`、`caddy`。
 - `restart: unless-stopped`；`depends_on` 使用健康条件：postgres → backend → caddy。
 - 资源限制：`mem_limit` / `cpus` / `pids_limit`；postgres 1 GB / 1 CPU / 256 pids，backend 768 MB / 1 CPU / 512 pids，Caddy 128 MB / 0.5 CPU / 128 pids。
 - 安全选项：backend `read_only` + `tmpfs: /tmp` + `cap_drop: [ALL]`；Caddy 镜像内创建 uid 10002 用户，复制前端产物时设置属主，并 chown `/data`、`/config`；所有服务 `security_opt: no-new-privileges:true`。Caddy 健康检查使用 `nc -z` 探测 8080，避免管理 API 日志噪声；后端就绪由 `depends_on` 保证。
 - 日志：`logging.options.max-size=10m`、`max-file=5`。
-- 卷：`pulseops-postgres-data`、`pulseops-caddy-data`、`pulseops-caddy-config`。
+- 卷：`beatward-postgres-data`、`beatward-caddy-data`、`beatward-caddy-config`。
 - Caddy 以镜像内固定 UID 运行；从非加固版本升级时，若已有 `caddy-data`/`caddy-config` 卷为 root 属主，需一次性 `chown -R 10002:10002` 或删除重建卷。全新部署由镜像内属主初始化。
 
 ### 配置与密钥
 
-- 生产环境文件 `/etc/pulseops/pulseops.env`，权限 600，属主为部署账号。
+- 生产环境文件 `/etc/beatward/beatward.env`，权限 600，属主为部署账号。
 - 仓库提供 `deploy/env.prod.example`（占位值，不使用 `.env.prod.example` 命名，避免被 `.gitignore` 的 `.env.*` 规则忽略）。
-- 必填变量：数据库凭据、`SERVER_ADDRESS=0.0.0.0`、`PULSEOPS_AUTH_COOKIE_SECURE=true`、`HEARTBEAT_REQUIRE_HTTPS=true`、首次引导账号变量、`SITE_ADDRESS`、`TLS_ISSUER`、`IMAGE_TAG`。
+- 必填变量：数据库凭据、`SERVER_ADDRESS=0.0.0.0`、`BEATWARD_AUTH_COOKIE_SECURE=true`、`HEARTBEAT_REQUIRE_HTTPS=true`、首次引导账号变量、`SITE_ADDRESS`、`TLS_ISSUER`、`IMAGE_TAG`。
 - 可选变量：Telegram、登录限流容量、备份相关参数。
-- 备份密钥、rclone 配置与 Healthchecks URL 只存在于 `/etc/pulseops/` 下的 600 文件中，不进入 Git。
+- 备份密钥、rclone 配置与 Healthchecks URL 只存在于 `/etc/beatward/` 下的 600 文件中，不进入 Git。
 
 ## TLS 与本地验证
 
@@ -136,7 +136,7 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 	skip_install_trust
 }
 
-{$SITE_ADDRESS:pulseops.test} {
+{$SITE_ADDRESS:beatward.test} {
 	tls {$TLS_ISSUER:internal}
 
 	encode zstd gzip
@@ -156,10 +156,10 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 
 使用互斥的 `handle` 块，避免 `try_files` 的 SPA 重写先于 `reverse_proxy` 生效，导致 `/api/*` 被回退到 `index.html`。`skip_install_trust` 避免非 root 运行时不必要地向容器信任库安装内部 CA；根证书仍从卷导出供宿主导入。
 
-- 5A：`SITE_ADDRESS=pulseops.test`、`TLS_ISSUER=internal`；Windows 宿主 hosts 指向 VM IP，导入 Caddy 根 CA 到用户证书库，浏览器访问 `https://pulseops.test`。
+- 5A：`SITE_ADDRESS=beatward.test`、`TLS_ISSUER=internal`；Windows 宿主 hosts 指向 VM IP，导入 Caddy 根 CA 到用户证书库，浏览器访问 `https://beatward.test`。
 - 5B：改 `SITE_ADDRESS=<真实域名>`、`TLS_ISSUER=<ACME 邮箱>`，Caddyfile 不变。
 - HTTP 80 自动跳转 HTTPS。
-- Caddy 根证书从 `pulseops-caddy-data` 卷导出：`/data/caddy/pki/authorities/local/root.crt`，由 `scripts/export-caddy-root-ca.sh` 封装。
+- Caddy 根证书从 `beatward-caddy-data` 卷导出：`/data/caddy/pki/authorities/local/root.crt`，由 `scripts/export-caddy-root-ca.sh` 封装。
 - Caddy 仅开启错误日志（默认 stderr）；不开启访问日志，避免每分钟健康检查刷屏。
 
 ## 代理信任与真实客户端 IP
@@ -182,36 +182,36 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 - 应用与 Caddy 不写宿主日志文件；全部输出到容器 stdout/stderr。
 - Docker `json-file` 驱动统一 `max-size=10m`、`max-file=5`，单服务最多约 50 MB。
 - Caddy 只记录错误与启动信息；故障排查需要访问日志时临时开启，不修改默认配置。
-- systemd timer 与脚本输出进入 journald，`journalctl -u pulseops-backup` 查看。
+- systemd timer 与脚本输出进入 journald，`journalctl -u beatward-backup` 查看。
 - 不引入 logrotate。
 
 ## 备份、加密与异地
 
 ### 调度
 
-- `/etc/systemd/system/pulseops-backup.service`：`Type=oneshot`，`EnvironmentFile=/etc/pulseops/pulseops.env`，`WorkingDirectory=/opt/pulseops`，`ExecStart=/opt/pulseops/scripts/backup.sh`。
-- `/etc/systemd/system/pulseops-backup.timer`：`OnCalendar=*-*-* 03:17:00 UTC`，`Persistent=true`。
-- 失败单元 `pulseops-backup-failure.service` 由 `OnFailure=` 触发，ping Healthchecks `/fail` URL。
-- Compose 相关脚本通过 `COMPOSE_FILE=/opt/pulseops/compose.prod.yaml` 与 `COMPOSE_PROJECT_NAME=pulseops` 保证连接生产库。
+- `/etc/systemd/system/beatward-backup.service`：`Type=oneshot`，`EnvironmentFile=/etc/beatward/beatward.env`，`WorkingDirectory=/opt/beatward`，`ExecStart=/opt/beatward/scripts/backup.sh`。
+- `/etc/systemd/system/beatward-backup.timer`：`OnCalendar=*-*-* 03:17:00 UTC`，`Persistent=true`。
+- 失败单元 `beatward-backup-failure.service` 由 `OnFailure=` 触发，ping Healthchecks `/fail` URL。
+- Compose 相关脚本通过 `COMPOSE_FILE=/opt/beatward/compose.prod.yaml` 与 `COMPOSE_PROJECT_NAME=beatward` 保证连接生产库。
 
 ### 流程
 
-1. `backup.sh` 生成未加密 dump，写入 `BACKUP_DIR=/var/backups/pulseops`，做 `pg_restore --list` 自检，本地保留 7 份（沿用现有逻辑）。
+1. `backup.sh` 生成未加密 dump，写入 `BACKUP_DIR=/var/backups/beatward`，做 `pg_restore --list` 自检，本地保留 7 份（沿用现有逻辑）。
 2. 使用 `age -r <公钥>` 加密为 `.dump.age`。
-3. `rclone copyto` 上传到对象存储的 `pulseops/db/` 前缀；异地保留 14 份。
+3. `rclone copyto` 上传到对象存储的 `beatward/db/` 前缀；异地保留 14 份。
 4. 上传后校验远端对象存在且大小一致。
 5. 成功 ping Healthchecks 成功 URL；任一步失败以非零退出，触发 `OnFailure`。
 
 ### 密钥与配置
 
-- `age` 私钥：`/etc/pulseops/age.key`，600，属主为运行备份服务的账号（systemd 默认 root）；离线备份一份，不进入 Git。
-- rclone 配置：`/etc/pulseops/rclone.conf`，600；remote 名称与路径由环境变量提供。
+- `age` 私钥：`/etc/beatward/age.key`，600，属主为运行备份服务的账号（systemd 默认 root）；离线备份一份，不进入 Git。
+- rclone 配置：`/etc/beatward/rclone.conf`，600；remote 名称与路径由环境变量提供。
 - 5A 使用 rclone 本地 remote（目录位于 VM 内另一路径）验证加密、上传、保留与恢复全链路；5B 换成真实桶，脚本不变。
 
 ### 恢复演练
 
 - 从异地副本拉取最新的 `.dump.age`，`age -d` 解密。
-- 用 `restore.sh` 恢复到独立库 `pulseops_restore`。
+- 用 `restore.sh` 恢复到独立库 `beatward_restore`。
 - 在恢复库上启动应用（关闭调度），校验 Flyway 历史、核心表行数与抽样数据、`/actuator/health` 与管理 API。
 - 演练证据写入 `quality/phase5a-acceptance.md`，并明确"异地副本恢复"与 4B 本地演练的区别。
 
@@ -222,7 +222,7 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
   - 可用性监控候选：UptimeRobot、Better Stack；关注免费档探测间隔与告警渠道。
   - 备份失效监控：Healthchecks.io 死信检查（与备份 ping 配套）。
 - 5A 选型对比、推荐服务与探测配置见 [`quality/deployment.md#独立外部监控`](../quality/deployment.md#独立外部监控)；实际注册与告警验证在 5B。
-- 告警接收沿用 Telegram；明确"PulseOps 自身宕机时告警链路不依赖 PulseOps"。
+- 告警接收沿用 Telegram；明确"Beatward 自身宕机时告警链路不依赖 Beatward"。
 - 5B 实际接入并验证探测与告警。
 
 ## 部署与回滚
@@ -230,7 +230,7 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 ### deploy.sh
 
 1. 预检：`compose.prod.yaml` 可解析、环境文件存在且权限为 600、Docker 可用、磁盘余量、当前健康状态。
-2. 记录当前 `IMAGE_TAG`（写入 `/opt/pulseops/.deployed-tag`）并执行一次备份。
+2. 记录当前 `IMAGE_TAG`（写入 `/opt/beatward/.deployed-tag`）并执行一次备份。
 3. `docker compose -f compose.prod.yaml build`，镜像打上新 SHA tag。
 4. `docker compose -f compose.prod.yaml up -d`，等待全部服务健康，超时 120 秒。
 5. 冒烟：`/` 返回 200、匿名 `/api/v1/monitors` 返回 401、`/actuator/health` 返回 UP。
@@ -255,7 +255,7 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 `scripts/harden-vps.sh` 在 VM 与 VPS 上共用，幂等并支持 `--dry-run`。
 
 - ufw：先重置为最小规则集；默认拒绝入站、允许出站；`limit 22/tcp`；允许 80/443；按顺序先放行 22 再启用。
-- sshd：`/etc/ssh/sshd_config.d/99-pulseops-hardening.conf` 设置仅密钥登录、禁用密码与交互式认证、`PermitRootLogin prohibit-password`、`MaxAuthTries 3`。
+- sshd：`/etc/ssh/sshd_config.d/99-beatward-hardening.conf` 设置仅密钥登录、禁用密码与交互式认证、`PermitRootLogin prohibit-password`、`MaxAuthTries 3`。
 - 应用前执行 `sshd -t`，通过后才 `systemctl reload ssh`。
 - 执行提示：保留当前会话，另开一个会话验证登录成功后才断开旧会话。
 - 5A 在 VM 中演练幂等性与规则生效；锁死时用加固前快照恢复。
@@ -286,7 +286,7 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 | `compose.prod.yaml` | 生产三服务编排 |
 | `frontend/deploy/Caddyfile` | 静态托管与反代 |
 | `deploy/env.prod.example` | 生产环境变量占位 |
-| `deploy/systemd/pulseops-backup.service` / `.timer` / `-failure.service` | 备份调度与失败告警模板 |
+| `deploy/systemd/beatward-backup.service` / `.timer` / `-failure.service` | 备份调度与失败告警模板 |
 | `backend/Dockerfile`、`backend/.dockerignore` | 后端镜像 |
 | `frontend/Dockerfile`、`frontend/.dockerignore` | 前端 + Caddy 镜像 |
 | `scripts/provision-vm.sh` | VM/VPS 共用基础配置 |
@@ -313,10 +313,10 @@ Caddyfile 放在 `frontend/deploy/Caddyfile`（位于前端构建上下文内）
 ### VM 内手工验收
 
 1. `docker compose -f compose.prod.yaml up -d` 后三个服务全部 healthy。
-2. 浏览器通过 `https://pulseops.test` 访问 UI，登录、创建监控、查看历史可用；HTTP 自动跳转 HTTPS。
+2. 浏览器通过 `https://beatward.test` 访问 UI，登录、创建监控、查看历史可用；HTTP 自动跳转 HTTPS。
 3. `docker inspect` 确认日志驱动与轮转参数；服务日志只出现在 `docker compose logs`。
-4. 手动触发 `pulseops-backup.timer`：本地 dump、自检、加密、rclone 上传、Healthchecks ping 全部成功；`OnFailure` 路径用一次故意失败验证。
-5. 从异地加密副本恢复 `pulseops_restore`，用恢复库启动应用并访问健康检查与管理 API。
+4. 手动触发 `beatward-backup.timer`：本地 dump、自检、加密、rclone 上传、Healthchecks ping 全部成功；`OnFailure` 路径用一次故意失败验证。
+5. 从异地加密副本恢复 `beatward_restore`，用恢复库启动应用并访问健康检查与管理 API。
 6. `deploy.sh` 与 `rollback.sh` dry-run；执行一次真实镜像回退并验证健康。
 7. `harden-vps.sh --dry-run` 输出正确；在 VM 上实际执行后，从 Windows 宿主验证仅 22/80/443 可达，5432/8080 不可达；第二个 SSH 会话验证后再断开。
 8. 重启 VM 后容器、timer 与快照恢复路径符合预期。

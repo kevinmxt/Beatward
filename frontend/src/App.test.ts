@@ -82,7 +82,7 @@ describe('app navigation and authentication', () => {
     expect(logoutMock).toHaveBeenCalledTimes(1)
     expect(router.currentRoute.value.path).toBe('/login')
     expect(wrapper.find('.app-header').exists()).toBe(false)
-    expect(wrapper.text()).toContain('登录 PulseOps')
+    expect(wrapper.text()).toContain('登录 Beatward')
   })
 
   it('returns to the login page even when the logout request fails', async () => {
@@ -94,14 +94,14 @@ describe('app navigation and authentication', () => {
     await flushPromises()
 
     expect(router.currentRoute.value.path).toBe('/login')
-    expect(wrapper.text()).toContain('登录 PulseOps')
+    expect(wrapper.text()).toContain('登录 Beatward')
   })
 
   it('shows the public login page without the management header', async () => {
     clearAuth()
     const { wrapper } = await mountAt('/login')
 
-    expect(wrapper.find('h1').text()).toBe('登录 PulseOps')
+    expect(wrapper.find('h1').text()).toBe('登录 Beatward')
     expect(wrapper.find('.app-header').exists()).toBe(false)
   })
 

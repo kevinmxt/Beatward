@@ -1,4 +1,4 @@
-name: pulseops
+name: beatward
 
 x-logging: &default-logging
   driver: json-file
@@ -19,8 +19,8 @@ services:
     security_opt: *default-security-opt
     logging: *default-logging
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-pulseops}
-      POSTGRES_USER: ${POSTGRES_USER:-pulseops}
+      POSTGRES_DB: ${POSTGRES_DB:-beatward}
+      POSTGRES_USER: ${POSTGRES_USER:-beatward}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       TZ: UTC
     volumes:
@@ -35,7 +35,7 @@ services:
       - data
 
   backend:
-    image: pulseops-backend:${IMAGE_TAG:-local}
+    image: beatward-backend:${IMAGE_TAG:-local}
     build:
       context: backend
     restart: unless-stopped
@@ -53,23 +53,23 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/pulseops}
-      DB_USERNAME: ${POSTGRES_USER:-pulseops}
+      DB_URL: ${DB_URL:-jdbc:postgresql://postgres:5432/beatward}
+      DB_USERNAME: ${POSTGRES_USER:-beatward}
       DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       SERVER_ADDRESS: 0.0.0.0
-      PULSEOPS_AUTH_COOKIE_SECURE: "true"
+      BEATWARD_AUTH_COOKIE_SECURE: "true"
       HEARTBEAT_REQUIRE_HTTPS: "true"
-      PULSEOPS_AUTH_BOOTSTRAP_USERNAME: ${PULSEOPS_AUTH_BOOTSTRAP_USERNAME:-}
-      PULSEOPS_AUTH_BOOTSTRAP_PASSWORD_HASH: ${PULSEOPS_AUTH_BOOTSTRAP_PASSWORD_HASH:-}
-      PULSEOPS_AUTH_RATE_LIMIT_MAX_KEYS: ${PULSEOPS_AUTH_RATE_LIMIT_MAX_KEYS:-10000}
-      PULSEOPS_TELEGRAM_BOT_TOKEN: ${PULSEOPS_TELEGRAM_BOT_TOKEN:-}
-      PULSEOPS_TELEGRAM_CHAT_ID: ${PULSEOPS_TELEGRAM_CHAT_ID:-}
+      BEATWARD_AUTH_BOOTSTRAP_USERNAME: ${BEATWARD_AUTH_BOOTSTRAP_USERNAME:-}
+      BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH: ${BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH:-}
+      BEATWARD_AUTH_RATE_LIMIT_MAX_KEYS: ${BEATWARD_AUTH_RATE_LIMIT_MAX_KEYS:-10000}
+      BEATWARD_TELEGRAM_BOT_TOKEN: ${BEATWARD_TELEGRAM_BOT_TOKEN:-}
+      BEATWARD_TELEGRAM_CHAT_ID: ${BEATWARD_TELEGRAM_CHAT_ID:-}
     networks:
       - edge
       - data
 
   caddy:
-    image: pulseops-caddy:${IMAGE_TAG:-local}
+    image: beatward-caddy:${IMAGE_TAG:-local}
     build:
       context: frontend
     restart: unless-stopped
@@ -82,7 +82,7 @@ services:
       backend:
         condition: service_healthy
     environment:
-      SITE_ADDRESS: ${SITE_ADDRESS:-pulseops.test}
+      SITE_ADDRESS: ${SITE_ADDRESS:-beatward.test}
       TLS_ISSUER: ${TLS_ISSUER:-internal}
     ports:
       - "80:8080"
@@ -102,11 +102,11 @@ services:
 
 volumes:
   postgres-data:
-    name: pulseops-postgres-data
+    name: beatward-postgres-data
   caddy-data:
-    name: pulseops-caddy-data
+    name: beatward-caddy-data
   caddy-config:
-    name: pulseops-caddy-config
+    name: beatward-caddy-config
 
 networks:
   edge:

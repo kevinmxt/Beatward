@@ -11,7 +11,7 @@ Phase 5A 需要把本地开发栈（仅包含 PostgreSQL 的 `compose.yaml`）�
 
 ## 决策
 
-- 使用单台 Linux VPS + Docker Compose。生产编排为 `compose.prod.yaml`，项目名固定 `pulseops`；`compose.yaml` 只保留本地 PostgreSQL。
+- 使用单台 Linux VPS + Docker Compose。生产编排为 `compose.prod.yaml`，项目名固定 `beatward`；`compose.yaml` 只保留本地 PostgreSQL。
 - 三个服务：`caddy` 是唯一对外入口，托管前端静态文件并把 `/api/*`、`/actuator/health*` 反向代理到 `backend`；`backend` 运行 Spring Boot；`postgres` 只通过内部网络访问。
 - 固定两个 bridge 网络：`edge` 承载 `caddy` 与 `backend`，`data` 承载 `backend` 与 `postgres`；`postgres` 不加入 `edge`。
 - 宿主只发布 80/443 到 Caddy 容器；HTTP 自动跳转 HTTPS。`backend` 与 `postgres` 不发布宿主端口，避免 Docker 发布端口绕过 ufw。
@@ -23,7 +23,7 @@ Phase 5A 需要把本地开发栈（仅包含 PostgreSQL 的 `compose.yaml`）�
 - 备份自动化：systemd timer 定时执行 `backup.sh`；流程为 `pg_dump -Fc` + `pg_restore --list` 自检 → `age` 非对称加密 → `rclone` 异地 → 远端对象大小校验 → Healthchecks ping。带本地与异地保留策略；失败由 `OnFailure` 单元 ping `/fail`；私钥离线备份。
 - 发布与回滚：在目标机器构建镜像，tag 使用 Git short SHA，不引入镜像仓库。`deploy.sh` 执行预检 → 备份 → 构建 → 健康门禁 → 冒烟，失败不自动回滚。Flyway 只做前向迁移；schema 不兼容时从部署前备份恢复，不编写 down 迁移。
 - 加固：ufw 默认拒绝入站，仅放行 SSH 与 HTTP/HTTPS；sshd 仅密钥登录、禁用密码与交互式认证、root 仅密钥登录，保持 22 端口；不引入 fail2ban。
-- 外部监控：公开 `/actuator/health` 供外部可用性服务探测；Healthchecks.io 负责备份死信。告警链路不经过 PulseOps 本身。
+- 外部监控：公开 `/actuator/health` 供外部可用性服务探测；Healthchecks.io 负责备份死信。告警链路不经过 Beatward 本身。
 
 ## 备选方案
 
