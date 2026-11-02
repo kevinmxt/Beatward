@@ -9,6 +9,16 @@
 
 预算目标为全部基础设施尽量低于 S$50/月。采购前需核实机房、税费、续费、流量和备份价格。
 
+## 从 PulseOps 更名迁移（一次性）
+
+项目在正式上线前由 PulseOps 更名为 Beatward，不保留旧标识兼容层。已有本地或 VM 环境需按以下顺序重建；决策与回退见 [ADR-0011](../adr/0011-rename-to-beatward.md)。
+
+1. 停止旧调度与旧栈：`systemctl disable --now pulseops-backup.timer`，删除旧单元 `/etc/systemd/system/pulseops-backup*`，然后在旧目录执行 `docker compose -p pulseops down -v`。
+2. 将 `/etc/pulseops/pulseops.env` 重建为 `/etc/beatward/beatward.env`：更新路径、`COMPOSE_PROJECT_NAME`，并将 `PULSEOPS_*` 改为 `BEATWARD_*`。
+3. 重建 Docker 项目与数据库卷（本项目无生产数据）；旧备份 `pulseops-*.dump` 不参与新流程。
+4. 本地域名从 `pulseops.test` 改为 `beatward.test`，更新 hosts，并重新信任 Caddy 内部 CA。
+5. Cookie 名改为 `BEATWARD_SESSION`，所有旧会话失效，需重新登录。
+
 ## 生产拓扑与 Compose
 
 生产编排为 [`compose.prod.yaml`](../../compose.prod.yaml)，设计决策与取舍见 [ADR-0010](../adr/0010-production-topology-and-trusted-proxy.md)。

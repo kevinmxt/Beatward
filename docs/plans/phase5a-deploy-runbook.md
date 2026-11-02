@@ -5,6 +5,7 @@
 - 本文件是**可照做的部署运行手册**：把当前仓库代码部署到本地 Multipass 虚拟机 `beatward-vps`，并从 Windows 宿主机通过 HTTPS 访问。
 - VM 的安装与基础配置见 [`phase5a-vm-setup.md`](phase5a-vm-setup.md)；行为与规范的**事实来源**是 [`../quality/deployment.md`](../quality/deployment.md)，设计决策见 [`phase5a-deployment.md`](phase5a-deployment.md)，已验收的实际执行证据见 [`../quality/phase5a-acceptance.md`](../quality/phase5a-acceptance.md)。
 - 范围仅限本地演练（5A）：真实域名证书、公网可达性、外部监控注册与连续运行验收属 Phase 5B。
+- 项目自 2026-11 起更名为 Beatward，本手册使用 `beatward-vps` 与 `beatward.test`。若沿用 Phase 5A 的 `pulseops-vps` 旧环境，需先按 [ADR-0011](../adr/0011-rename-to-beatward.md) 停用旧栈，或删除后重建 VM。
 
 ## 生产路径约定
 
@@ -27,7 +28,7 @@
 Windows 自带的 `tar.exe`（bsdtar）中 `*` **可跨 `/` 匹配**。排除规则必须**锚定到根目录产物**：
 
 ```powershell
-cd G:\work\workspace\2026\Beatward
+cd G:\work\workspace\2026\PulseOps
 git rev-parse --short HEAD          # 记下输出，步骤 9 的 --tag 会用到
 
 tar -czf beatward-src.tar.gz `
@@ -140,7 +141,7 @@ COMPOSE_ENV_FILE=/etc/beatward/beatward.env \
 
 ```powershell
 # 取回证书
-multipass transfer beatward-vps:/home/ubuntu/caddy-root.crt G:\work\workspace\2026\Beatward\
+multipass transfer beatward-vps:/home/ubuntu/caddy-root.crt G:\work\workspace\2026\PulseOps\
 
 # 管理员 PowerShell：写入 hosts（VM 重启后 IP 会变，需重跑）
 $ip = (multipass info beatward-vps --format json | ConvertFrom-Json).info.'beatward-vps'.ipv4[0]

@@ -10,6 +10,7 @@ DRY_RUN=0
 SSH_CONFIG="/etc/ssh/sshd_config"
 SSHD_CONFIG_DIR="/etc/ssh/sshd_config.d"
 SSHD_DROPIN="${SSHD_CONFIG_DIR}/99-beatward-hardening.conf"
+LEGACY_SSHD_DROPIN="${SSHD_CONFIG_DIR}/99-pulseops-hardening.conf"
 
 usage() {
     cat <<'EOF'
@@ -130,6 +131,7 @@ log "Configuring sshd"
 if [[ "${DRY_RUN}" -eq 1 ]]; then
     log "Would write ${SSHD_DROPIN}:"
     printf '%s\n' "${sshd_content}"
+    log "Would remove legacy ${LEGACY_SSHD_DROPIN} if present"
     log "Would run: ${SSHD_BIN} -t"
     log "Would run: systemctl reload ssh"
 else
@@ -152,6 +154,7 @@ else
         die "sshd configuration validation failed; reverted ${SSHD_DROPIN}"
     fi
     rm -f "${backup}"
+    rm -f "${LEGACY_SSHD_DROPIN}"
     systemctl reload ssh
 fi
 

@@ -6,6 +6,7 @@
 - 5A 验收与 5B 上线前预演都在这台 VM 内完成；验收证据只认 VM 内的执行结果。
 - Windows 宿主机不参与部署验收，也不要在宿主机上执行防火墙或 SSH 加固。
 - 生产规范见 [`../quality/deployment.md`](../quality/deployment.md)。
+- 项目自 2026-11 起更名为 Beatward，重建环境时使用 `beatward-vps`；沿用旧 `pulseops-vps` 时需先按 [ADR-0011](../adr/0011-rename-to-beatward.md) 停用旧栈或重建 VM。
 
 ## 本机已验证条件
 
