@@ -1,8 +1,10 @@
-# PulseOps 文档索引
+# Beatward 文档索引
 
 ## 项目一句话
 
-PulseOps 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台，支持故障事件、恢复判断和通知。
+Beatward 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台，支持故障事件、恢复判断和通知。
+
+> 本项目曾用名 PulseOps，自 2026-11 起更名为 Beatward。Phase 1–5A 验收记录与历史评审保留原名，仅作历史证据。
 
 ## 渐进式披露规则
 

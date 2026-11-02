@@ -1,0 +1,22 @@
+package dev.beatward.notification;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+@Component
+@ConditionalOnProperty(name = "beatward.notification.scheduling-enabled", matchIfMissing = true)
+public class ScheduledNotificationTicker {
+
+    private final NotificationDispatcher notificationDispatcher;
+
+    public ScheduledNotificationTicker(NotificationDispatcher notificationDispatcher) {
+        this.notificationDispatcher = notificationDispatcher;
+    }
+
+    @Scheduled(fixedDelayString = "${beatward.notification.dispatch-interval:5s}",
+            scheduler = "notificationTickScheduler")
+    public void tick() {
+        notificationDispatcher.dispatchDue();
+    }
+}

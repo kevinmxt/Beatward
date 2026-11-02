@@ -17,7 +17,7 @@ async function handleLogout(): Promise<void> {
 <template>
   <div class="app-shell">
     <header v-if="authState.authenticated" class="app-header">
-      <RouterLink class="brand" to="/monitors">PulseOps</RouterLink>
+      <RouterLink class="brand" to="/monitors">Beatward</RouterLink>
       <nav class="app-nav">
         <RouterLink to="/monitors">监控项</RouterLink>
         <RouterLink to="/incidents">Incidents</RouterLink>

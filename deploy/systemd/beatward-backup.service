@@ -1,0 +1,14 @@
+[Unit]
+Description=Beatward database backup
+Wants=network-online.target
+After=network-online.target docker.service
+OnFailure=beatward-backup-failure.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/beatward/beatward.env
+WorkingDirectory=/opt/beatward
+UMask=0077
+NoNewPrivileges=true
+TimeoutStartSec=30min
+ExecStart=/opt/beatward/scripts/backup.sh

@@ -2,7 +2,7 @@
 
 Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 
-The `origin` remote is configured as `kevinmxt/PulseOps`, so `gh` infers the repo automatically when run inside the clone. Use `-R kevinmxt/PulseOps` only when running `gh` outside the repository.
+The `origin` remote is configured as `kevinmxt/Beatward`, so `gh` infers the repo automatically when run inside the clone. Use `-R kevinmxt/Beatward` only when running `gh` outside the repository.
 
 ## Conventions
 

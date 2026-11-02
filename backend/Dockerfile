@@ -16,15 +16,15 @@ RUN --mount=type=cache,target=/root/.m2 \
 
 FROM ${JRE_IMAGE}
 
-RUN addgroup -S -g 10001 pulseops \
-    && adduser -S -D -H -u 10001 -G pulseops -h /app -s /sbin/nologin pulseops \
+RUN addgroup -S -g 10001 beatward \
+    && adduser -S -D -H -u 10001 -G beatward -h /app -s /sbin/nologin beatward \
     && mkdir -p /app \
-    && chown pulseops:pulseops /app
+    && chown beatward:beatward /app
 
 WORKDIR /app
-COPY --from=build --chown=pulseops:pulseops /workspace/target/pulseops-backend-*.jar /app/app.jar
+COPY --from=build --chown=beatward:beatward /workspace/target/beatward-backend-*.jar /app/app.jar
 
-USER pulseops:pulseops
+USER beatward:beatward
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \

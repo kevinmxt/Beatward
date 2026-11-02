@@ -19,7 +19,7 @@
 | 当前终端权限 | 非管理员；安装 Multipass 与修改 hosts 需要管理员 PowerShell |
 | Multipass | 1.16.4 已安装，服务 Running |
 | 数据目录 | `C:\ProgramData\Multipass` 为 junction，指向 `G:\work\VM\Multipass` |
-| 演练 VM | `pulseops-vps` Running；Ubuntu 24.04.5 LTS；2 vCPU / 3.8 GiB / 38.7 GiB；1 个快照 |
+| 演练 VM | `beatward-vps` Running；Ubuntu 24.04.5 LTS；2 vCPU / 3.8 GiB / 38.7 GiB；1 个快照 |
 | VM 内组件 | systemd、Docker、Compose v5.6.1、ufw、age、rclone 已安装 |
 
 ## 路径策略
@@ -111,7 +111,7 @@ multipass version
 在普通 PowerShell 中执行（Multipass 客户端不需要管理员）：
 
 ```powershell
-multipass launch 24.04 --name pulseops-vps --cpus 2 --memory 4G --disk 40G --timeout 3600
+multipass launch 24.04 --name beatward-vps --cpus 2 --memory 4G --disk 40G --timeout 3600
 ```
 
 - 规格对齐目标 VPS：2 vCPU / 4 GB RAM / 40 GB 磁盘。
@@ -119,7 +119,7 @@ multipass launch 24.04 --name pulseops-vps --cpus 2 --memory 4G --disk 40G --tim
 - 确认实例与网络：
 
 ```powershell
-multipass info pulseops-vps
+multipass info beatward-vps
 ```
 
 - 确认磁盘落在 G:：
@@ -132,7 +132,7 @@ Get-ChildItem G:\work\VM\Multipass -Recurse -Filter *.vhdx |
 ## 步骤 4：VM 基础配置
 
 ```powershell
-multipass shell pulseops-vps
+multipass shell beatward-vps
 ```
 
 以下命令在 VM 内执行。
@@ -140,8 +140,8 @@ multipass shell pulseops-vps
 也可以从仓库直接运行幂等脚本完成 4.1 的时区与基础包安装、4.2 的 Docker 安装、4.3 的镜像配置，并输出组件版本；不包含主机名、`hello-world` 拉取验证与防火墙/SSH 加固：
 
 ```powershell
-multipass transfer scripts/provision-vm.sh pulseops-vps:/tmp/provision-vm.sh
-multipass exec pulseops-vps -- sudo bash /tmp/provision-vm.sh
+multipass transfer scripts/provision-vm.sh beatward-vps:/tmp/provision-vm.sh
+multipass exec beatward-vps -- sudo bash /tmp/provision-vm.sh
 ```
 
 - 脚本默认使用 `https://docker.m.daocloud.io` 作为 Docker registry mirror；可用 `DOCKER_REGISTRY_MIRROR` 覆盖。
@@ -155,7 +155,7 @@ multipass exec pulseops-vps -- sudo bash /tmp/provision-vm.sh
 
 ```bash
 sudo timedatectl set-timezone UTC
-sudo hostnamectl set-hostname pulseops-vps
+sudo hostnamectl set-hostname beatward-vps
 sudo apt-get update
 sudo apt-get -y full-upgrade
 sudo apt-get install -y ca-certificates curl gnupg ufw age rclone
@@ -193,7 +193,7 @@ sudo usermod -aG docker ubuntu
 
 ```bash
 exit
-multipass shell pulseops-vps
+multipass shell beatward-vps
 docker version
 docker compose version
 ```
@@ -236,17 +236,17 @@ docker compose version
 Multipass 的 Hyper-V 默认交换机通过 DHCP 分配地址，**重启后 IP 可能变化**。获取当前 IP：
 
 ```powershell
-(multipass info pulseops-vps --format json | ConvertFrom-Json).info.'pulseops-vps'.ipv4[0]
+(multipass info beatward-vps --format json | ConvertFrom-Json).info.'beatward-vps'.ipv4[0]
 ```
 
-在管理员 PowerShell 中写入 hosts（`pulseops.test` 为保留 TLD，不会与真实域名冲突）：
+在管理员 PowerShell 中写入 hosts（`beatward.test` 为保留 TLD，不会与真实域名冲突）：
 
 ```powershell
-$ip = (multipass info pulseops-vps --format json | ConvertFrom-Json).info.'pulseops-vps'.ipv4[0]
+$ip = (multipass info beatward-vps --format json | ConvertFrom-Json).info.'beatward-vps'.ipv4[0]
 $hosts = "$env:SystemRoot\System32\drivers\etc\hosts"
-$lines = Get-Content $hosts | Where-Object { $_ -notmatch '\spulseops\.test$' }
+$lines = Get-Content $hosts | Where-Object { $_ -notmatch '\sbeatward\.test$' }
 Set-Content -Path $hosts -Value $lines -Encoding ASCII
-Add-Content -Path $hosts -Value "$ip pulseops.test" -Encoding ASCII
+Add-Content -Path $hosts -Value "$ip beatward.test" -Encoding ASCII
 ipconfig /flushdns
 ```
 
@@ -257,20 +257,20 @@ VM 重启后如 IP 变化，重跑这段脚本即可。
 基础环境完成后打快照，后续加固或演练失败可快速恢复：
 
 ```powershell
-multipass stop pulseops-vps
-multipass snapshot pulseops-vps --name base
-multipass start pulseops-vps
+multipass stop beatward-vps
+multipass snapshot beatward-vps --name base
+multipass start beatward-vps
 ```
 
 - 快照存放在 G:，与实例同一介质。
-- 恢复前需停止实例：`multipass restore pulseops-vps.base`（具体子命令以 `multipass help snapshot` 为准）。
+- 恢复前需停止实例：`multipass restore beatward-vps.base`（具体子命令以 `multipass help snapshot` 为准）。
 - 快照不是备份，不替代 5A 的数据库备份演练。
 
 ## 步骤 7：重启验证
 
 ```powershell
-multipass restart pulseops-vps
-multipass info pulseops-vps
+multipass restart beatward-vps
+multipass info beatward-vps
 ```
 
 ```bash
@@ -285,7 +285,7 @@ docker ps
 
 ## 清理与卸载
 
-- 删除实例：`multipass delete pulseops-vps --purge`（会删除 G: 下的实例数据）。
+- 删除实例：`multipass delete beatward-vps --purge`（会删除 G: 下的实例数据）。
 - 卸载 Multipass 前，先在管理员 PowerShell 中**移除 junction**，再卸载，避免卸载程序跟随联接删除 G: 数据：
 
 ```powershell

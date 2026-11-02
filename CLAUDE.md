@@ -57,7 +57,7 @@
 
 ### Issue tracker
 
-Issues live in GitHub Issues; `origin` is configured as `kevinmxt/PulseOps`. See `docs/agents/issue-tracker.md`.
+Issues live in GitHub Issues; `origin` is configured as `kevinmxt/Beatward`. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

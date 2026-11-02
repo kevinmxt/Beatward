@@ -36,7 +36,7 @@ async function submit(): Promise<void> {
 <template>
   <section class="auth-page">
     <div class="auth-panel">
-      <h1>登录 PulseOps</h1>
+      <h1>登录 Beatward</h1>
       <p v-if="expired" class="notice">登录状态已过期，请重新登录。</p>
       <p v-if="changed" class="notice">密码已修改，请重新登录。</p>
 

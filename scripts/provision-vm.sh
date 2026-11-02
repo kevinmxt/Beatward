@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Provisions base packages for PulseOps on Ubuntu 24.04.
+# Provisions base packages for Beatward on Ubuntu 24.04.
 # Installs Docker Engine + Compose v2, ufw, age and rclone, configures a
 # Docker registry mirror and sets the timezone to UTC.
 # Does not configure firewall rules or SSH hardening; see harden-vps.sh.

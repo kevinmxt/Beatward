@@ -22,7 +22,7 @@
 - 不得将完整令牌写入日志。
 - 按令牌 SHA-256 摘要限流 120 次/分钟（无效令牌同样计数），超出返回 `429` 并带 `Retry-After`；内存中的跟踪键数量设上限，防止无效令牌无限增长。
 - 请求体上限 1KB，超出返回 `413`。
-- `pulseops.heartbeat.require-https` 开启时，仅接受被判定为 HTTPS 的请求，否则返回 `400`；判定规则、可信代理与客户端地址统一见 [`auth.md`](auth.md#可信代理与客户端地址)。
+- `beatward.heartbeat.require-https` 开启时，仅接受被判定为 HTTPS 的请求，否则返回 `400`；判定规则、可信代理与客户端地址统一见 [`auth.md`](auth.md#可信代理与客户端地址)。
 
 ## 令牌轮换与撤销
 
@@ -33,7 +33,7 @@
 ## 超时扫描与恢复
 
 - 截止时间 = `(last_heartbeat_at ?? created_at) + interval_seconds + grace_seconds`。
-- 扫描器按 `pulseops.heartbeat.tick-interval`（默认 5 秒，最小 100ms）运行，每批最多 `batch-size`（默认 100，范围 1–500）个；查询启用的 `HEARTBEAT` 监控项中 `next_check_at <= now` 的记录。
+- 扫描器按 `beatward.heartbeat.tick-interval`（默认 5 秒，最小 100ms）运行，每批最多 `batch-size`（默认 100，范围 1–500）个；查询启用的 `HEARTBEAT` 监控项中 `next_check_at <= now` 的记录。
 - `next_check_at` 是调度与锁定后重新校验的截止时间：创建、有效上报和配置变更时等于上述公式；重新启用时设为启用时间加间隔与宽限。
 - 每个监控项在独立事务内锁定 Monitor 后重新校验 `next_check_at`，与有效上报串行化。
 - 超时后状态置 `DOWN`，创建唯一未解决 Incident，并写入一条 `HEARTBEAT_TIMEOUT` CheckResult；仅在从"无未解决 Incident"转为创建时写入，重复扫描不重复创建 Incident 或 CheckResult。
