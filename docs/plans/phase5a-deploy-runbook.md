@@ -206,24 +206,37 @@ journalctl -u beatward-backup.service -n 50 --no-pager
 
 ## 步骤 8：恢复演练
 
+备份文件位于 `BACKUP_DIR=/var/backups/beatward`（**不是** `./backups`），且 dump 由 `backup.sh`（root/systemd）以 **600** 权限写出，属主为 root；`restore.sh` 内部用 `< "$backup_file"` 读取，普通用户直接跑会 `Permission denied`。因此读取本地 dump 与解密产物都需 `sudo`。`sudo` 会重置环境变量，`COMPOSE_FILE`/`COMPOSE_PROJECT_NAME` 必须通过 `sudo env ...` 显式传入，否则脚本内的 `docker compose` 找不到 prod 文件。
+
 ```bash
 cd /opt/beatward
 export COMPOSE_FILE=/opt/beatward/compose.prod.yaml COMPOSE_PROJECT_NAME=beatward
 
-# 本地副本 → 独立库
-./scripts/restore.sh ./backups/beatward-<时间戳>.dump beatward_restore
-
-# 异地加密副本 → 独立库
+# 先列出真实文件名（勿直接粘贴占位符 <...>，bash 会把 < 当作输入重定向）
+ls -lt /var/backups/beatward/*.dump
 sudo rclone --config /etc/beatward/rclone.conf \
-  copyto "local:/var/backups/beatward-offsite/beatward/db/<file>.dump.age" /tmp/latest.dump.age
+  lsf "local:/var/backups/beatward-offsite/beatward/db/"
+
+# 1) 本地副本 → 独立库（sudo env 传递 Compose 变量；自动取最新一个）
+LATEST=$(ls -t /var/backups/beatward/*.dump | head -1)
+sudo env COMPOSE_FILE=$COMPOSE_FILE COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME \
+  ./scripts/restore.sh "$LATEST" beatward_restore
+
+# 2) 异地加密副本 → 解密 → 独立库（--force 必须放在子命令最前）
+AGE_FILE=<步骤上方 lsf 列出的真实文件名>.dump.age
+sudo rclone --config /etc/beatward/rclone.conf \
+  copyto "local:/var/backups/beatward-offsite/beatward/db/${AGE_FILE}" /tmp/latest.dump.age
 sudo age --decrypt --identity /etc/beatward/age.key \
   --output /tmp/latest.dump /tmp/latest.dump.age
-sudo ./scripts/restore.sh /tmp/latest.dump beatward_restore
+sudo env COMPOSE_FILE=$COMPOSE_FILE COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME \
+  ./scripts/restore.sh --force /tmp/latest.dump beatward_restore
 ```
 
-- 脚本拒绝恢复进源库与维护库；目标库已存在需显式 `--force`（不可撤销）。
+- 脚本拒绝恢复进源库与维护库；目标库已存在需显式 `--force`（不可撤销），且 `--force` 是**第一个参数**（`restore.sh [--force] <backup-file> <target-db>`），放末尾会因参数个数不符直接打印 usage 退出。
+- 两步都用 `beatward_restore` 时，第二步的 `--force` 会先 drop 再重建；若想分别保留，可改用不同目标库名。目标库名须匹配 `^[A-Za-z_][A-Za-z0-9_]{0,62}$`。
+- 成功标志：`Verifying dump` → `CREATE DATABASE` → `Restore completed: ... -> beatward_restore`（`pg_restore --exit-on-error` 未报错即证明 dump 完整可恢复）。
 - 校验 Flyway 历史与核心表行数与源库一致后，再按 [`../quality/deployment.md`](../quality/deployment.md) 用恢复库启动应用验证健康与管理 API。
-- 演练结束删除恢复库与临时文件；`age.key` 权限必须保持 600。
+- 演练结束删除恢复库与临时文件（`rm -f /tmp/latest.dump /tmp/latest.dump.age`）；`age.key` 权限必须保持 600。
 
 ## 步骤 9：后续发布与回滚
 
