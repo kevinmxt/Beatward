@@ -1,5 +1,6 @@
 package dev.beatward.notification;
 
+import dev.beatward.auth.AccountActivity;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
 import dev.beatward.monitor.MonitorEntity;
@@ -29,6 +30,7 @@ public class NotificationDispatcher {
     private final NotificationDeliveryRepository deliveryRepository;
     private final IncidentRepository incidentRepository;
     private final MonitorRepository monitorRepository;
+    private final AccountActivity accountActivity;
     private final NotificationMessageFormatter messageFormatter;
     private final TelegramNotificationSender sender;
     private final MeterRegistry meterRegistry;
@@ -38,6 +40,7 @@ public class NotificationDispatcher {
     public NotificationDispatcher(NotificationDeliveryRepository deliveryRepository,
                                   IncidentRepository incidentRepository,
                                   MonitorRepository monitorRepository,
+                                  AccountActivity accountActivity,
                                   NotificationMessageFormatter messageFormatter,
                                   TelegramNotificationSender sender,
                                   MeterRegistry meterRegistry,
@@ -46,6 +49,7 @@ public class NotificationDispatcher {
         this.deliveryRepository = deliveryRepository;
         this.incidentRepository = incidentRepository;
         this.monitorRepository = monitorRepository;
+        this.accountActivity = accountActivity;
         this.messageFormatter = messageFormatter;
         this.sender = sender;
         this.meterRegistry = meterRegistry;
@@ -74,6 +78,9 @@ public class NotificationDispatcher {
                     .orElseThrow(() -> new NotificationSendException("Incident no longer exists", false));
             MonitorEntity monitor = monitorRepository.findById(incident.getMonitorId())
                     .orElseThrow(() -> new NotificationSendException("Monitor no longer exists", false));
+            if (!accountActivity.isActive(monitor.getUserId())) {
+                throw new NotificationSendException("Account is disabled", false);
+            }
             sender.send(messageFormatter.format(delivery.getEventType(), incident, monitor));
             delivery.markSent(clock.instant());
             meterRegistry.counter("notification.sent").increment();

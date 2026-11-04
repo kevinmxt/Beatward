@@ -1,5 +1,6 @@
 package dev.beatward.heartbeat;
 
+import dev.beatward.auth.AccountStatus;
 import dev.beatward.monitor.MonitorRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,8 @@ public class HeartbeatScheduler {
 
     public void tick() {
         Instant now = clock.instant();
-        for (Long monitorId : monitorRepository.findDueHeartbeatIds(now, PageRequest.of(0, batchSize))) {
+        for (Long monitorId : monitorRepository.findDueHeartbeatIds(
+                now, AccountStatus.ACTIVE, PageRequest.of(0, batchSize))) {
             try {
                 timeoutService.checkTimeout(monitorId);
             } catch (RuntimeException e) {

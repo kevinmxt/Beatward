@@ -3,6 +3,7 @@ package dev.beatward.acceptance;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import dev.beatward.BeatwardApplication;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import dev.beatward.monitor.MonitorStatus;
@@ -109,7 +110,10 @@ class Phase1RestartIT {
             MonitorRepository monitors = first.getBean(MonitorRepository.class);
             CheckResultRepository results = first.getBean(CheckResultRepository.class);
 
-            MonitorEntity monitor = monitors.save(monitor());
+            MonitorEntity monitor = monitor();
+            monitor.setUserId(first.getBean(AppUserRepository.class)
+                    .findByUsername("test-admin").orElseThrow().getId());
+            monitors.save(monitor);
             monitorId = monitor.getId();
             results.save(previousResult(monitorId, previousCheckAt));
             assertThat(results.count()).isEqualTo(1);

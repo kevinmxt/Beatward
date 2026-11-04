@@ -1,5 +1,6 @@
 package dev.beatward.heartbeat.api;
 
+import dev.beatward.auth.CurrentUserProvider;
 import dev.beatward.heartbeat.HeartbeatPayloadTooLargeException;
 import dev.beatward.heartbeat.HeartbeatProperties;
 import dev.beatward.heartbeat.HeartbeatRateLimiter;
@@ -9,6 +10,7 @@ import dev.beatward.heartbeat.HttpsRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,13 +30,18 @@ public class HeartbeatController {
     private final HeartbeatTokenGenerator tokenGenerator;
     private final HeartbeatRateLimiter rateLimiter;
     private final HeartbeatProperties properties;
+    private final CurrentUserProvider currentUserProvider;
 
-    public HeartbeatController(HeartbeatService heartbeatService, HeartbeatTokenGenerator tokenGenerator,
-                               HeartbeatRateLimiter rateLimiter, HeartbeatProperties properties) {
+    public HeartbeatController(HeartbeatService heartbeatService,
+                               HeartbeatTokenGenerator tokenGenerator,
+                               HeartbeatRateLimiter rateLimiter,
+                               HeartbeatProperties properties,
+                               CurrentUserProvider currentUserProvider) {
         this.heartbeatService = heartbeatService;
         this.tokenGenerator = tokenGenerator;
         this.rateLimiter = rateLimiter;
         this.properties = properties;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @PostMapping("/api/v1/heartbeats/{token}")
@@ -49,14 +56,16 @@ public class HeartbeatController {
     }
 
     @PostMapping("/api/v1/monitors/{id}/heartbeat-token")
-    public HeartbeatTokenResponse rotate(@PathVariable Long id) {
-        return new HeartbeatTokenResponse(heartbeatService.rotateToken(id));
+    public HeartbeatTokenResponse rotate(@PathVariable Long id, Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        return new HeartbeatTokenResponse(heartbeatService.rotateToken(id, userId));
     }
 
     @DeleteMapping("/api/v1/monitors/{id}/heartbeat-token")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void revoke(@PathVariable Long id) {
-        heartbeatService.revokeToken(id);
+    public void revoke(@PathVariable Long id, Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        heartbeatService.revokeToken(id, userId);
     }
 
     private static boolean isSecure(HttpServletRequest request) {

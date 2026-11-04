@@ -16,11 +16,24 @@ public interface IncidentRepository extends JpaRepository<IncidentEntity, Long> 
 
     @Query("""
             select i
-            from IncidentEntity i
-            where (:status is null or i.status = :status)
+            from IncidentEntity i, MonitorEntity m
+            where i.monitorId = m.id
+              and m.userId = :userId
+              and (:status is null or i.status = :status)
               and (:monitorId is null or i.monitorId = :monitorId)
             """)
-    Page<IncidentEntity> search(@Param("status") IncidentStatus status,
-                                @Param("monitorId") Long monitorId,
-                                Pageable pageable);
+    Page<IncidentEntity> searchForUser(@Param("userId") Long userId,
+                                       @Param("status") IncidentStatus status,
+                                       @Param("monitorId") Long monitorId,
+                                       Pageable pageable);
+
+    @Query("""
+            select i
+            from IncidentEntity i, MonitorEntity m
+            where i.id = :id
+              and i.monitorId = m.id
+              and m.userId = :userId
+            """)
+    Optional<IncidentEntity> findByIdForUser(@Param("id") Long id,
+                                             @Param("userId") Long userId);
 }

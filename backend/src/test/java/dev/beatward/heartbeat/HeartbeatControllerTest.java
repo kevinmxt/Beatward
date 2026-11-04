@@ -1,5 +1,6 @@
 package dev.beatward.heartbeat;
 
+import dev.beatward.auth.CurrentUserProvider;
 import dev.beatward.heartbeat.api.HeartbeatController;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -19,7 +20,8 @@ class HeartbeatControllerTest {
     private final HeartbeatService service = mock(HeartbeatService.class);
     private final HeartbeatController controller = new HeartbeatController(
             service, new HeartbeatTokenGenerator(), new HeartbeatRateLimiter(Clock.systemUTC()),
-            new HeartbeatProperties(false, Duration.ofSeconds(5), 100, true));
+            new HeartbeatProperties(false, Duration.ofSeconds(5), 100, true),
+            mock(CurrentUserProvider.class));
 
     @Test
     void rejectsChunkedBodiesLargerThanOneKilobyte() {

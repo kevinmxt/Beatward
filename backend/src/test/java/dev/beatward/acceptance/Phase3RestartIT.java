@@ -3,6 +3,7 @@ package dev.beatward.acceptance;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import dev.beatward.BeatwardApplication;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.heartbeat.HeartbeatScheduler;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
@@ -83,7 +84,11 @@ class Phase3RestartIT {
             CheckResultRepository checkResults = first.getBean(CheckResultRepository.class);
             NotificationDeliveryRepository deliveries = first.getBean(NotificationDeliveryRepository.class);
 
-            MonitorEntity preRestart = monitors.save(heartbeat("pre-restart", preRestartDeadline));
+            Long ownerId = first.getBean(AppUserRepository.class)
+                    .findByUsername("test-admin").orElseThrow().getId();
+            MonitorEntity preRestart = heartbeat("pre-restart", preRestartDeadline);
+            preRestart.setUserId(ownerId);
+            monitors.save(preRestart);
             preRestartMonitorId = preRestart.getId();
 
             first.getBean(HeartbeatScheduler.class).tick();
@@ -99,8 +104,9 @@ class Phase3RestartIT {
             replay.setNextCheckAt(Instant.now().minusSeconds(60));
             monitors.save(replay);
 
-            dueAfterRestartMonitorId = monitors.save(
-                    heartbeat("due-after-restart", dueAfterRestartDeadline)).getId();
+            MonitorEntity dueAfterRestart = heartbeat("due-after-restart", dueAfterRestartDeadline);
+            dueAfterRestart.setUserId(ownerId);
+            dueAfterRestartMonitorId = monitors.save(dueAfterRestart).getId();
         }
 
         try (ConfigurableApplicationContext second = startContext()) {

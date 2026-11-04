@@ -1,5 +1,6 @@
 package dev.beatward.incident.api;
 
+import dev.beatward.auth.CurrentUserProvider;
 import dev.beatward.common.InvalidQueryException;
 import dev.beatward.common.PageResponse;
 import dev.beatward.incident.IncidentEntity;
@@ -7,6 +8,7 @@ import dev.beatward.incident.IncidentQueryService;
 import dev.beatward.incident.IncidentStatus;
 import dev.beatward.notification.api.NotificationDeliveryResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,9 +24,12 @@ import java.util.Map;
 public class IncidentController {
 
     private final IncidentQueryService incidentQueryService;
+    private final CurrentUserProvider currentUserProvider;
 
-    public IncidentController(IncidentQueryService incidentQueryService) {
+    public IncidentController(IncidentQueryService incidentQueryService,
+                              CurrentUserProvider currentUserProvider) {
         this.incidentQueryService = incidentQueryService;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @GetMapping
@@ -32,9 +37,12 @@ public class IncidentController {
             @RequestParam(required = false) String status,
             @RequestParam(name = "monitor_id", required = false) Long monitorId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
         IncidentStatus parsedStatus = parseStatus(status);
-        Page<IncidentEntity> result = incidentQueryService.list(parsedStatus, monitorId, page, size);
+        Page<IncidentEntity> result = incidentQueryService.listForUser(
+                userId, parsedStatus, monitorId, page, size);
         Map<Long, String> monitorNames = incidentQueryService.monitorNames(
                 result.getContent().stream().map(IncidentEntity::getMonitorId).toList());
         List<IncidentResponse> items = result.getContent().stream()
@@ -45,8 +53,9 @@ public class IncidentController {
     }
 
     @GetMapping("/{id}")
-    public IncidentDetailResponse get(@PathVariable Long id) {
-        IncidentEntity incident = incidentQueryService.get(id);
+    public IncidentDetailResponse get(@PathVariable Long id, Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        IncidentEntity incident = incidentQueryService.getForUser(id, userId);
         List<NotificationDeliveryResponse> deliveries = incidentQueryService
                 .recentDeliveries(incident.getId()).stream()
                 .map(NotificationDeliveryResponse::from)

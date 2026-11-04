@@ -1,5 +1,6 @@
 package dev.beatward.monitor.probe;
 
+import dev.beatward.auth.AccountStatus;
 import dev.beatward.monitor.MonitorDisabledException;
 import dev.beatward.monitor.MonitorNotFoundException;
 import dev.beatward.monitor.MonitorRepository;
@@ -43,7 +44,8 @@ public class ProbeScheduler {
 
     public void tick() {
         Instant now = clock.instant();
-        List<Long> dueMonitorIds = monitorRepository.findDueMonitorIds(now, PageRequest.of(0, batchSize));
+        List<Long> dueMonitorIds = monitorRepository.findDueMonitorIds(
+                now, AccountStatus.ACTIVE, PageRequest.of(0, batchSize));
         int rejected = 0;
         for (Long monitorId : dueMonitorIds) {
             if (!inFlight.add(monitorId)) {

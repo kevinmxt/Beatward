@@ -2,6 +2,8 @@ package dev.beatward.notification;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AccountStatus;
+import dev.beatward.auth.AppUserEntity;
 import dev.beatward.auth.AppUserRepository;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
@@ -257,6 +259,28 @@ class NotificationFlowIT {
                 .contains("故障告警")
                 .contains("非预期状态码")
                 .contains("2026-10-21 08:00:00 UTC");
+    }
+
+    @Test
+    void skipsDeliveryWhenOwnerAccountIsDisabled() {
+        AppUserEntity owner = createOwner();
+        MonitorEntity monitor = createMonitor(owner.getId());
+        failing = true;
+        probe(monitor);
+        probe(monitor);
+        probe(monitor);
+        assertThat(onlyDelivery().getStatus()).isEqualTo(NotificationDeliveryStatus.PENDING);
+
+        owner.setStatus(AccountStatus.DISABLED);
+        owner.setDisabledAt(CLOCK.instant());
+        userRepository.save(owner);
+
+        notificationDispatcher.dispatchDue();
+
+        NotificationDeliveryEntity delivery = onlyDelivery();
+        assertThat(delivery.getStatus()).isEqualTo(NotificationDeliveryStatus.FAILED);
+        assertThat(delivery.getLastErrorSummary()).contains("Account is disabled");
+        assertThat(TELEGRAM_REQUESTS).isEmpty();
     }
 
     @Test
@@ -540,6 +564,10 @@ class NotificationFlowIT {
     }
 
     private MonitorEntity createMonitor() {
+        return createMonitor(ownerId());
+    }
+
+    private MonitorEntity createMonitor(Long ownerId) {
         return monitorService.create(new MonitorConfigInput(
                 "notification target",
                 "http://127.0.0.1:" + PORT + "/target",
@@ -551,11 +579,23 @@ class NotificationFlowIT {
                 299,
                 true,
                 null,
-                null), ownerId()).monitor();
+                null), ownerId).monitor();
     }
 
     private Long ownerId() {
         return userRepository.findByUsername("test-admin").orElseThrow().getId();
+    }
+
+    private AppUserEntity createOwner() {
+        AppUserEntity user = new AppUserEntity();
+        user.setUsername("notify-owner-" + java.util.UUID.randomUUID().toString().substring(0, 8));
+        user.setPasswordHash(
+                "{bcrypt}$2a$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234");
+        user.setRole(dev.beatward.auth.AppRole.USER);
+        user.setStatus(AccountStatus.ACTIVE);
+        user.setCreatedAt(CLOCK.instant());
+        user.setUpdatedAt(CLOCK.instant());
+        return userRepository.save(user);
     }
 
     private void probe(MonitorEntity monitor) {
