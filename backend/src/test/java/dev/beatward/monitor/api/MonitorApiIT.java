@@ -121,6 +121,28 @@ class MonitorApiIT {
     }
 
     @Test
+    void rejectsCreatesBeyondPerUserQuotaWithActionableError() throws Exception {
+        for (int i = 0; i < 20; i++) {
+            create("quota-" + i);
+        }
+
+        mockMvc.perform(post("/api/v1/monitors")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"one-too-many","targetUrl":"http://8.8.8.8/health"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("QUOTA_EXCEEDED"))
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("20 of 20")))
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.containsString("Delete an existing monitor")))
+                .andExpect(jsonPath("$.traceId").isNotEmpty());
+
+        assertThat(repository.count()).isEqualTo(20);
+    }
+
+    @Test
     void listsMonitorsNewestFirstWithPagination() throws Exception {
         create("first");
         create("second");
@@ -321,12 +343,12 @@ class MonitorApiIT {
         mockMvc.perform(put("/api/v1/monitors/{id}", id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"scheduled","targetUrl":"http://8.8.8.8/health","intervalSeconds":30}
+                                {"name":"scheduled","targetUrl":"http://8.8.8.8/health","intervalSeconds":120}
                                 """))
                 .andExpect(status().isOk());
 
         MonitorEntity intervalChanged = repository.findById(id).orElseThrow();
-        assertThat(intervalChanged.getIntervalSeconds()).isEqualTo(30);
+        assertThat(intervalChanged.getIntervalSeconds()).isEqualTo(120);
         assertThat(intervalChanged.getNextCheckAt()).isEqualTo(intervalChanged.getUpdatedAt());
     }
 
@@ -350,7 +372,7 @@ class MonitorApiIT {
     void rejectsInvalidConfigValuesAtHttpLayer() throws Exception {
         String[] invalidBodies = {
                 "{\"name\":\"API\",\"targetUrl\":\"http://8.8.8.8\",\"method\":\"POST\"}",
-                "{\"name\":\"API\",\"targetUrl\":\"http://8.8.8.8\",\"intervalSeconds\":9}",
+                "{\"name\":\"API\",\"targetUrl\":\"http://8.8.8.8\",\"intervalSeconds\":59}",
                 "{\"name\":\"API\",\"targetUrl\":\"http://8.8.8.8\",\"connectTimeoutMs\":999}",
                 "{\"name\":\"API\",\"targetUrl\":\"http://8.8.8.8\",\"responseTimeoutMs\":30001}",
                 "{\"name\":\"API\",\"targetUrl\":\"http://8.8.8.8\",\"expectedStatusMin\":600}",

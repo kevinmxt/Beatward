@@ -36,7 +36,7 @@
 
 路径可随实现调整，但必须维护一致的 API 文档和测试。
 
-错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。
+错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。Phase 4C-2c 新增 `QUOTA_EXCEEDED`（409）。
 
 ## 认证与访问边界
 
@@ -49,7 +49,7 @@
 - 登录失败按用户名与远端地址限流；超限返回 429 `RATE_LIMITED` 并带 `Retry-After`。
 - 会话 Cookie、空闲/绝对期限与改密后会话失效规则见 [`auth.md`](auth.md)。
 
-Monitor 的请求与响应包含 `failureThreshold` 与 `recoveryThreshold`（取值 1–10，默认 3/2）；请求中缺失时使用默认值。
+Monitor 的请求与响应包含 `failureThreshold` 与 `recoveryThreshold`（取值 1–10，默认 3/2）；请求中缺失时使用默认值。HTTP 类型 `intervalSeconds` 取值 60–86400，默认 60。每个账号最多 20 个 Monitor（HTTP 与 HEARTBEAT 合计）；超出配额时创建返回 409 `QUOTA_EXCEEDED`，消息包含当前用量、上限与删除既有 Monitor 的操作提示。
 
 ### 监控类型
 

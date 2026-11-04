@@ -288,6 +288,8 @@ class HistoryCleanupIT {
 
     private MonitorEntity createMonitor(String name) {
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(jdbcTemplate.queryForObject(
+                "SELECT id FROM app_user WHERE username = 'test-admin'", Long.class));
         monitor.setName(name);
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl("http://127.0.0.1:9/health");

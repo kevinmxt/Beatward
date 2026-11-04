@@ -21,6 +21,7 @@ import dev.beatward.heartbeat.HttpsRequiredException;
 import dev.beatward.heartbeat.NotHeartbeatMonitorException;
 import dev.beatward.incident.IncidentNotFoundException;
 import dev.beatward.monitor.MonitorNotFoundException;
+import dev.beatward.monitor.QuotaExceededException;
 import dev.beatward.monitor.config.InvalidMonitorConfigException;
 import dev.beatward.monitor.target.BlockedTargetException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,6 +53,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleIncidentNotFound(IncidentNotFoundException ex,
                                                                    HttpServletRequest request) {
         return error(HttpStatus.NOT_FOUND, "INCIDENT_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(QuotaExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleQuotaExceeded(QuotaExceededException ex,
+                                                                HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "QUOTA_EXCEEDED", ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidMonitorConfigException.class)

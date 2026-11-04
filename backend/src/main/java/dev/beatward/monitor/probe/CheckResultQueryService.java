@@ -28,6 +28,6 @@ public class CheckResultQueryService {
         }
         PageRequest pageRequest = PageQueries.of(page, size,
                 Sort.by(Sort.Order.desc("startedAt"), Sort.Order.desc("id")));
-        return checkResultRepository.findByMonitorId(monitorId, pageRequest);
+        return checkResultRepository.findByMonitorIdAndUserId(monitorId, userId, pageRequest);
     }
 }

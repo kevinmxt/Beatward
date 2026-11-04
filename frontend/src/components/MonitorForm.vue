@@ -75,7 +75,7 @@ function submit(): void {
           id="monitor-interval"
           v-model.number="values.intervalSeconds"
           type="number"
-          min="10"
+          min="60"
           max="86400"
         />
         <p v-if="errors.intervalSeconds" class="field-error">{{ errors.intervalSeconds }}</p>

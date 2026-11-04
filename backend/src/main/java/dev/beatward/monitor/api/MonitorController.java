@@ -66,7 +66,7 @@ public class MonitorController {
         Page<MonitorEntity> result = monitorService.listForUser(userId, page, size);
         List<MonitorEntity> monitors = result.getContent();
         List<Long> monitorIds = monitors.stream().map(MonitorEntity::getId).toList();
-        Map<Long, Long> durations = monitorService.latestCheckDurations(monitorIds);
+        Map<Long, Long> durations = monitorService.latestCheckDurations(monitorIds, userId);
         List<MonitorResponse> items = monitors.stream()
                 .map(monitor -> MonitorResponse.from(monitor, null, durations.get(monitor.getId())))
                 .toList();
@@ -77,7 +77,7 @@ public class MonitorController {
     public MonitorResponse get(@PathVariable Long id, Authentication authentication) {
         Long userId = currentUserProvider.requireId(authentication);
         MonitorEntity monitor = monitorService.getForUser(id, userId);
-        return MonitorResponse.from(monitor, null, monitorService.latestCheckDuration(id));
+        return MonitorResponse.from(monitor, null, monitorService.latestCheckDuration(id, userId));
     }
 
     @GetMapping("/{id}/checks")
@@ -99,7 +99,7 @@ public class MonitorController {
                                   Authentication authentication) {
         Long userId = currentUserProvider.requireId(authentication);
         MonitorEntity monitor = monitorService.updateForUser(id, request, userId);
-        return MonitorResponse.from(monitor, null, monitorService.latestCheckDuration(id));
+        return MonitorResponse.from(monitor, null, monitorService.latestCheckDuration(id, userId));
     }
 
     @DeleteMapping("/{id}")

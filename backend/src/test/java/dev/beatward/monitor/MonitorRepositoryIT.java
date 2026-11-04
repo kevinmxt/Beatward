@@ -41,6 +41,7 @@ class MonitorRepositoryIT {
 
         Instant now = Instant.parse("2026-10-21T08:00:00Z");
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(adminId());
         monitor.setName("API");
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl("http://8.8.8.8/health");
@@ -84,16 +85,38 @@ class MonitorRepositoryIT {
     void enforcesConfigurationRangesInDatabase() {
         assertThatThrownBy(() -> jdbcTemplate.update("""
                 INSERT INTO monitor (
+                    user_id, name, type, target_url, method, interval_seconds,
+                    connect_timeout_ms, response_timeout_ms,
+                    expected_status_min, expected_status_max,
+                    enabled, current_status, next_check_at, created_at, updated_at
+                ) VALUES (
+                    ?, 'invalid', 'HTTP', 'http://8.8.8.8', 'GET', 59,
+                    3000, 10000, 200, 299,
+                    TRUE, 'UNKNOWN', NOW(), NOW(), NOW()
+                )
+                """, adminId()))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void requiresAnOwner() {
+        assertThatThrownBy(() -> jdbcTemplate.update("""
+                INSERT INTO monitor (
                     name, type, target_url, method, interval_seconds,
                     connect_timeout_ms, response_timeout_ms,
                     expected_status_min, expected_status_max,
                     enabled, current_status, next_check_at, created_at, updated_at
                 ) VALUES (
-                    'invalid', 'HTTP', 'http://8.8.8.8', 'GET', 9,
+                    'unowned', 'HTTP', 'http://8.8.8.8', 'GET', 60,
                     3000, 10000, 200, 299,
                     TRUE, 'UNKNOWN', NOW(), NOW(), NOW()
                 )
                 """))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    private Long adminId() {
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM app_user WHERE username = 'test-admin'", Long.class);
     }
 }

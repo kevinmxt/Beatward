@@ -97,7 +97,7 @@ export function validateHttpMonitorForm(values: HttpMonitorFormValues): MonitorF
     errors.targetUrl = urlError
   }
 
-  requireIntegerRange(errors, 'intervalSeconds', values.intervalSeconds, 10, 86400, '检查间隔', '秒')
+  requireIntegerRange(errors, 'intervalSeconds', values.intervalSeconds, 60, 86400, '检查间隔', '秒')
   requireIntegerRange(
     errors,
     'connectTimeoutMs',

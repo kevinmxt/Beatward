@@ -186,8 +186,8 @@ describe('HTTP monitor validation', () => {
       validateHttpMonitorForm({ ...validValues, intervalSeconds: null }).intervalSeconds,
     ).toContain('不能为空')
     expect(
-      validateHttpMonitorForm({ ...validValues, intervalSeconds: 9 }).intervalSeconds,
-    ).toContain('10')
+      validateHttpMonitorForm({ ...validValues, intervalSeconds: 59 }).intervalSeconds,
+    ).toContain('60')
     expect(
       validateHttpMonitorForm({ ...validValues, connectTimeoutMs: 999 }).connectTimeoutMs,
     ).toContain('1000')

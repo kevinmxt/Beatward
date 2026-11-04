@@ -3,6 +3,7 @@ package dev.beatward.acceptance;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import dev.beatward.BeatwardApplication;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
 import dev.beatward.incident.IncidentStatus;
@@ -82,7 +83,10 @@ class Phase2RestartIT {
             NotificationDeliveryRepository deliveries =
                     first.getBean(NotificationDeliveryRepository.class);
 
-            MonitorEntity monitor = monitors.save(monitor());
+            MonitorEntity monitor = monitor();
+            monitor.setUserId(first.getBean(AppUserRepository.class)
+                    .findByUsername("test-admin").orElseThrow().getId());
+            monitors.save(monitor);
             IncidentEntity incident = incidents.save(incident(monitor.getId()));
 
             NotificationDeliveryEntity sent = delivery(incident.getId(),

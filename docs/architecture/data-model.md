@@ -7,12 +7,12 @@
 
 核心字段：
 - `id`
-- `user_id`：归属账号，外键到 `app_user`；Phase 4C-2a 先以可空列加入并回填到现有管理员，后续迁移收紧为 `NOT NULL`
+- `user_id`：归属账号，外键到 `app_user`，`NOT NULL`；Phase 4C-2a 以可空列加入并回填，4C-2c 收紧为非空
 - `name`
 - `type`：`HTTP` 或 `HEARTBEAT`
 - `target_url`：仅 HTTP 类型，心跳类型为 `NULL`
 - `method`：仅 HTTP 类型
-- `interval_seconds`：HTTP 为 10–86400 秒；HEARTBEAT 为 30–2592000 秒
+- `interval_seconds`：HTTP 为 60–86400 秒（托管 profile 下限 60 秒）；HEARTBEAT 为 30–2592000 秒
 - `connect_timeout_ms`：仅 HTTP 类型
 - `response_timeout_ms`：仅 HTTP 类型
 - `expected_status_min`：仅 HTTP 类型

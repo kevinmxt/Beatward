@@ -94,7 +94,8 @@ class Phase3RestartIT {
             first.getBean(HeartbeatScheduler.class).tick();
 
             assertThat(incidentsFor(incidents, preRestartMonitorId)).hasSize(1);
-            assertThat(timeoutResults(checkResults, preRestartMonitorId)).hasSize(1);
+            assertThat(timeoutResults(checkResults, first.getBean(AppUserRepository.class),
+                    preRestartMonitorId)).hasSize(1);
             assertThat(deliveries.findAll()).hasSize(1)
                     .allMatch(delivery -> delivery.getStatus() == NotificationDeliveryStatus.PENDING);
             assertThat(monitors.findById(preRestartMonitorId).orElseThrow().getCurrentStatus())
@@ -123,7 +124,8 @@ class Phase3RestartIT {
             assertThat(preRestartIncidents).hasSize(1);
             assertThat(preRestartIncidents.getFirst().getStatus()).isEqualTo(IncidentStatus.OPEN);
             assertThat(preRestartIncidents.getFirst().getStartedAt()).isEqualTo(preRestartDeadline);
-            assertThat(timeoutResults(checkResults, preRestartMonitorId)).hasSize(1);
+            assertThat(timeoutResults(checkResults, second.getBean(AppUserRepository.class),
+                    preRestartMonitorId)).hasSize(1);
 
             List<IncidentEntity> dueIncidents = incidentsFor(incidents, dueAfterRestartMonitorId);
             assertThat(dueIncidents).hasSize(1);
@@ -131,7 +133,8 @@ class Phase3RestartIT {
             assertThat(dueIncident.getStatus()).isEqualTo(IncidentStatus.OPEN);
             assertThat(dueIncident.getFailureType()).isEqualTo(CheckFailureType.HEARTBEAT_TIMEOUT);
             assertThat(dueIncident.getStartedAt()).isEqualTo(dueAfterRestartDeadline);
-            assertThat(timeoutResults(checkResults, dueAfterRestartMonitorId)).hasSize(1);
+            assertThat(timeoutResults(checkResults, second.getBean(AppUserRepository.class),
+                    dueAfterRestartMonitorId)).hasSize(1);
 
             assertThat(deliveries.findAll()).hasSize(2)
                     .allMatch(delivery -> delivery.getStatus() == NotificationDeliveryStatus.PENDING);
@@ -188,8 +191,11 @@ class Phase3RestartIT {
                 .toList();
     }
 
-    private static List<CheckResultEntity> timeoutResults(CheckResultRepository checkResults, Long monitorId) {
-        return checkResults.findByMonitorId(monitorId, PageRequest.of(0, 10)).getContent().stream()
+    private static List<CheckResultEntity> timeoutResults(CheckResultRepository checkResults,
+                                                          AppUserRepository users, Long monitorId) {
+        Long userId = users.findByUsername("test-admin").orElseThrow().getId();
+        return checkResults.findByMonitorIdAndUserId(monitorId, userId, PageRequest.of(0, 10))
+                .getContent().stream()
                 .filter(result -> result.getFailureType() == CheckFailureType.HEARTBEAT_TIMEOUT)
                 .toList();
     }

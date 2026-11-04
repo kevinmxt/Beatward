@@ -44,7 +44,7 @@ public class IncidentController {
         Page<IncidentEntity> result = incidentQueryService.listForUser(
                 userId, parsedStatus, monitorId, page, size);
         Map<Long, String> monitorNames = incidentQueryService.monitorNames(
-                result.getContent().stream().map(IncidentEntity::getMonitorId).toList());
+                result.getContent().stream().map(IncidentEntity::getMonitorId).toList(), userId);
         List<IncidentResponse> items = result.getContent().stream()
                 .map(incident -> IncidentResponse.from(incident,
                         monitorNames.get(incident.getMonitorId())))
@@ -57,11 +57,11 @@ public class IncidentController {
         Long userId = currentUserProvider.requireId(authentication);
         IncidentEntity incident = incidentQueryService.getForUser(id, userId);
         List<NotificationDeliveryResponse> deliveries = incidentQueryService
-                .recentDeliveries(incident.getId()).stream()
+                .recentDeliveries(incident.getId(), userId).stream()
                 .map(NotificationDeliveryResponse::from)
                 .toList();
         return IncidentDetailResponse.from(incident,
-                incidentQueryService.monitorName(incident.getMonitorId()), deliveries);
+                incidentQueryService.monitorName(incident.getMonitorId(), userId), deliveries);
     }
 
     private static IncidentStatus parseStatus(String raw) {
