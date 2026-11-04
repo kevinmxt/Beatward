@@ -2,6 +2,7 @@ package dev.beatward.monitor.probe;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import dev.beatward.monitor.MonitorService;
@@ -83,6 +84,9 @@ class ProbeSchedulerIT {
 
     @Autowired
     MonitorService monitorService;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @Autowired
     ProbeService probeService;
@@ -478,7 +482,12 @@ class ProbeSchedulerIT {
     }
 
     private MonitorEntity createMonitor(String name, boolean enabled, int intervalSeconds, String path) {
-        return monitorService.create(config(name, enabled, intervalSeconds, path)).monitor();
+        return monitorService.create(config(name, enabled, intervalSeconds, path), ownerId())
+                .monitor();
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     private MonitorConfigInput config(String name, boolean enabled, int intervalSeconds, String path) {

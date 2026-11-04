@@ -2,6 +2,7 @@ package dev.beatward.monitor.probe;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.CheckFailureType;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
@@ -75,6 +76,9 @@ class MonitorConfigRaceIT {
 
     @Autowired
     MonitorService monitorService;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @Autowired
     ProbeService probeService;
@@ -169,7 +173,7 @@ class MonitorConfigRaceIT {
     @Test
     void incrementsConfigVersionOnlyWhenProbeSemanticsChange() {
         MonitorEntity created = monitorService.create(input("version", "/a", "GET", 60,
-                3000, 10000, 200, 299, true)).monitor();
+                3000, 10000, 200, 299, true), ownerId()).monitor();
         assertThat(created.getConfigVersion()).isEqualTo(1);
 
         MonitorEntity renamed = update(created.getId(), input("renamed", "/a", "GET", 60,
@@ -205,7 +209,7 @@ class MonitorConfigRaceIT {
     @Test
     void discardsInFlightResultAndDoesNotDelayProbeOfNewTarget() throws Exception {
         MonitorEntity monitor = monitorService.create(input("race", "/a", "GET", 60,
-                3000, 10000, 200, 299, true)).monitor();
+                3000, 10000, 200, 299, true), ownerId()).monitor();
         assertThat(monitor.getConfigVersion()).isEqualTo(1);
 
         ExecutorService staleProbeThread = Executors.newSingleThreadExecutor();
@@ -255,7 +259,7 @@ class MonitorConfigRaceIT {
     @Test
     void discardsInFlightResultWhenIntervalChanges() throws Exception {
         MonitorEntity monitor = monitorService.create(input("interval-change", "/a", "GET", 60,
-                3000, 10000, 200, 299, true)).monitor();
+                3000, 10000, 200, 299, true), ownerId()).monitor();
 
         ExecutorService staleProbeThread = Executors.newSingleThreadExecutor();
         try {
@@ -292,7 +296,7 @@ class MonitorConfigRaceIT {
     @Test
     void discardsInFlightResultWhenMethodChanges() throws Exception {
         MonitorEntity monitor = monitorService.create(input("method-change", "/a", "GET", 60,
-                3000, 10000, 200, 299, true)).monitor();
+                3000, 10000, 200, 299, true), ownerId()).monitor();
         CLOCK.advance(Duration.ofSeconds(30));
 
         ExecutorService staleProbeThread = Executors.newSingleThreadExecutor();
@@ -322,7 +326,7 @@ class MonitorConfigRaceIT {
     @Test
     void discardsInFlightResultWhenMonitorIsDeleted() throws Exception {
         MonitorEntity monitor = monitorService.create(input("deleted", "/a", "GET", 60,
-                3000, 10000, 200, 299, true)).monitor();
+                3000, 10000, 200, 299, true), ownerId()).monitor();
 
         ExecutorService staleProbeThread = Executors.newSingleThreadExecutor();
         try {
@@ -344,7 +348,7 @@ class MonitorConfigRaceIT {
     @Test
     void keepsResultWhenDisabledMidFlightAndProbesImmediatelyAfterReenable() throws Exception {
         MonitorEntity monitor = monitorService.create(input("disable", "/a", "GET", 60,
-                3000, 10000, 200, 299, true)).monitor();
+                3000, 10000, 200, 299, true), ownerId()).monitor();
 
         ExecutorService inFlightProbeThread = Executors.newSingleThreadExecutor();
         try {
@@ -436,6 +440,10 @@ class MonitorConfigRaceIT {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     static final class MutableClock extends Clock {

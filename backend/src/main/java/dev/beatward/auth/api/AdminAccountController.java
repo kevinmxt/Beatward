@@ -1,6 +1,6 @@
 package dev.beatward.auth.api;
 
-import dev.beatward.auth.AppUserRepository;
+import dev.beatward.auth.CurrentUserProvider;
 import dev.beatward.auth.InviteCodeService;
 import dev.beatward.auth.PasswordResetService;
 import dev.beatward.common.TraceIdFilter;
@@ -24,14 +24,14 @@ public class AdminAccountController {
 
     private final InviteCodeService inviteCodeService;
     private final PasswordResetService passwordResetService;
-    private final AppUserRepository userRepository;
+    private final CurrentUserProvider currentUserProvider;
 
     public AdminAccountController(InviteCodeService inviteCodeService,
                                   PasswordResetService passwordResetService,
-                                  AppUserRepository userRepository) {
+                                  CurrentUserProvider currentUserProvider) {
         this.inviteCodeService = inviteCodeService;
         this.passwordResetService = passwordResetService;
-        this.userRepository = userRepository;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @PostMapping("/invite-codes")
@@ -41,7 +41,7 @@ public class AdminAccountController {
         InviteCodeCreateRequest input = body == null
                 ? new InviteCodeCreateRequest(null, null, null)
                 : body;
-        Long adminId = currentUserId(authentication);
+        Long adminId = currentUserProvider.requireId(authentication);
         InviteCodeService.CreatedInviteCode created = inviteCodeService.create(
                 adminId, input.label(), input.maxUses(), input.expiresInHours());
         log.info("Invite code created, inviteId={}, createdBy={}, maxUses={}, expiresAt={}, "
@@ -55,17 +55,11 @@ public class AdminAccountController {
     @PostMapping("/users/{id}/reset-code")
     public ResetCodeResponse createResetCode(@PathVariable Long id, Authentication authentication,
                                              HttpServletRequest request) {
-        Long adminId = currentUserId(authentication);
+        Long adminId = currentUserProvider.requireId(authentication);
         PasswordResetService.CreatedResetCode created =
                 passwordResetService.create(id, adminId);
         log.info("Password reset code created, userId={}, createdBy={}, expiresAt={}, traceId={}",
                 id, adminId, created.expiresAt(), TraceIdFilter.currentTraceId(request));
         return new ResetCodeResponse(created.plaintextCode(), created.expiresAt());
-    }
-
-    private Long currentUserId(Authentication authentication) {
-        return userRepository.findByUsernameInput(authentication.getName())
-                .orElseThrow(() -> new IllegalStateException("authenticated user no longer exists"))
-                .getId();
     }
 }

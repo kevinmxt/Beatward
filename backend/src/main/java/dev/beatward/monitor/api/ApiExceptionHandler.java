@@ -5,6 +5,7 @@ import dev.beatward.auth.AuthValidationException;
 import dev.beatward.auth.InvalidCredentialsException;
 import dev.beatward.auth.InviteCodeException;
 import dev.beatward.auth.ResetTokenInvalidException;
+import dev.beatward.auth.UnauthenticatedException;
 import dev.beatward.auth.UserNotFoundException;
 import dev.beatward.auth.UsernameTakenException;
 import dev.beatward.auth.InvalidCurrentPasswordException;
@@ -129,6 +130,12 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleAccountDisabled(AccountDisabledException ex,
                                                                   HttpServletRequest request) {
         return error(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UnauthenticatedException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnauthenticated(UnauthenticatedException ex,
+                                                                  HttpServletRequest request) {
+        return error(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
