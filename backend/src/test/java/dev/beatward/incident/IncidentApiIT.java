@@ -1,5 +1,6 @@
 package dev.beatward.incident;
 
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import dev.beatward.monitor.MonitorService;
@@ -51,6 +52,9 @@ class IncidentApiIT {
 
     @Autowired
     MonitorService monitorService;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @Autowired
     MonitorRepository monitorRepository;
@@ -210,7 +214,11 @@ class IncidentApiIT {
                 299,
                 true,
                 null,
-                null)).monitor();
+                null), ownerId()).monitor();
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     private NotificationDeliveryEntity delivery(Long incidentId, NotificationEventType eventType,

@@ -2,6 +2,7 @@ package dev.beatward.monitor.api;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import dev.beatward.monitor.probe.CheckResultEntity;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -57,6 +59,12 @@ class MonitorApiIT {
     @Autowired
     Environment environment;
 
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    AppUserRepository userRepository;
+
     @BeforeEach
     void cleanDatabase() {
         repository.deleteAll();
@@ -87,6 +95,29 @@ class MonitorApiIT {
                 .andExpect(jsonPath("$.currentStatus").value("UNKNOWN"))
                 .andExpect(jsonPath("$.lastCheckedAt").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.nextCheckAt").doesNotExist());
+    }
+
+    @Test
+    void assignsCurrentUserAsOwnerForHttpMonitor() throws Exception {
+        long id = create("owned-http");
+
+        assertThat(ownerOf(id)).isEqualTo(adminId());
+    }
+
+    @Test
+    void assignsCurrentUserAsOwnerForHeartbeatMonitor() throws Exception {
+        long id = createHeartbeat("owned-heartbeat");
+
+        assertThat(ownerOf(id)).isEqualTo(adminId());
+    }
+
+    private Long ownerOf(long monitorId) {
+        return jdbcTemplate.queryForObject("SELECT user_id FROM monitor WHERE id = ?",
+                Long.class, monitorId);
+    }
+
+    private Long adminId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     @Test

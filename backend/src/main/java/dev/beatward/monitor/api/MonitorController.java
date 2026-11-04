@@ -1,5 +1,6 @@
 package dev.beatward.monitor.api;
 
+import dev.beatward.auth.CurrentUserProvider;
 import dev.beatward.common.PageResponse;
 import dev.beatward.monitor.MonitorCreationResult;
 import dev.beatward.monitor.MonitorEntity;
@@ -10,6 +11,7 @@ import dev.beatward.monitor.probe.CheckResultQueryService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,15 +34,21 @@ public class MonitorController {
 
     private final MonitorService monitorService;
     private final CheckResultQueryService checkResultQueryService;
+    private final CurrentUserProvider currentUserProvider;
 
-    public MonitorController(MonitorService monitorService, CheckResultQueryService checkResultQueryService) {
+    public MonitorController(MonitorService monitorService,
+                             CheckResultQueryService checkResultQueryService,
+                             CurrentUserProvider currentUserProvider) {
         this.monitorService = monitorService;
         this.checkResultQueryService = checkResultQueryService;
+        this.currentUserProvider = currentUserProvider;
     }
 
     @PostMapping
-    public ResponseEntity<MonitorResponse> create(@RequestBody MonitorConfigInput request) {
-        MonitorCreationResult created = monitorService.create(request);
+    public ResponseEntity<MonitorResponse> create(@RequestBody MonitorConfigInput request,
+                                                  Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        MonitorCreationResult created = monitorService.create(request, userId);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.monitor().getId())

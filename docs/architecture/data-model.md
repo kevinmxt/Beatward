@@ -7,6 +7,7 @@
 
 核心字段：
 - `id`
+- `user_id`：归属账号，外键到 `app_user`；Phase 4C-2a 先以可空列加入并回填到现有管理员，后续迁移收紧为 `NOT NULL`
 - `name`
 - `type`：`HTTP` 或 `HEARTBEAT`
 - `target_url`：仅 HTTP 类型，心跳类型为 `NULL`
@@ -32,6 +33,8 @@
 - `updated_at`
 
 `config_version` 用于探测结果写回时的条件校验；行为规范见 `specs/monitoring.md`。
+
+`monitor.user_id` 是多用户归属根。CheckResult、Incident、HeartbeatCredential 通过 `monitor_id` 推导归属，NotificationDelivery 通过 `incident_id` 推导；不重复存储 `user_id`。新建 Monitor 必须写入当前认证用户；索引 `monitor(user_id, enabled)` 支撑按用户查询与调度过滤。
 
 Phase 2 的计数与阈值在探测写回事务内更新；探测语义配置变更、禁用和重新启用时计数清零。修改阈值不追溯已有计数。HTTP 类型必须配置完整的目标 URL、方法、超时与期望状态码，由数据库 CHECK 约束保证；心跳类型不参与这些字段。`next_check_at` 对 HTTP 表示下次探测时间，对心跳表示下次超时扫描时间，也是锁定后重新校验的截止时间；心跳重新启用时设为启用时间加间隔与宽限。各阶段迁移只创建该阶段需要的列。
 

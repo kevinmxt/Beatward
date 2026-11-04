@@ -56,19 +56,23 @@ public class MonitorService {
     }
 
     @Transactional
-    public MonitorCreationResult create(MonitorConfigInput input) {
+    public MonitorCreationResult create(MonitorConfigInput input, Long userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("userId is required");
+        }
         return switch (configValidator.parseType(input.type())) {
-            case HTTP -> new MonitorCreationResult(createHttp(input), null);
-            case HEARTBEAT -> createHeartbeat(input);
+            case HTTP -> new MonitorCreationResult(createHttp(input, userId), null);
+            case HEARTBEAT -> createHeartbeat(input, userId);
         };
     }
 
-    private MonitorEntity createHttp(MonitorConfigInput input) {
+    private MonitorEntity createHttp(MonitorConfigInput input, Long userId) {
         MonitorConfig config = configValidator.validate(input);
         validateTarget(config.targetUrl());
 
         Instant now = clock.instant();
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(userId);
         applyConfig(monitor, config);
         monitor.setType(MonitorType.HTTP);
         monitor.setCurrentStatus(MonitorStatus.UNKNOWN);
@@ -78,11 +82,12 @@ public class MonitorService {
         return repository.save(monitor);
     }
 
-    private MonitorCreationResult createHeartbeat(MonitorConfigInput input) {
+    private MonitorCreationResult createHeartbeat(MonitorConfigInput input, Long userId) {
         HeartbeatConfig config = configValidator.validateHeartbeat(input);
 
         Instant now = clock.instant();
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(userId);
         monitor.setName(config.name());
         monitor.setType(MonitorType.HEARTBEAT);
         monitor.setIntervalSeconds(config.intervalSeconds());

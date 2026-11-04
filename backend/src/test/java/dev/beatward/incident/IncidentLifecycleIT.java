@@ -2,6 +2,7 @@ package dev.beatward.incident;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import dev.beatward.monitor.MonitorService;
@@ -75,6 +76,9 @@ class IncidentLifecycleIT {
 
     @Autowired
     MonitorService monitorService;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @Autowired
     ProbeService probeService;
@@ -396,7 +400,11 @@ class IncidentLifecycleIT {
                 299,
                 true,
                 failureThreshold,
-                null)).monitor();
+                null), ownerId()).monitor();
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     private void updateEnabled(MonitorEntity monitor, boolean enabled) {

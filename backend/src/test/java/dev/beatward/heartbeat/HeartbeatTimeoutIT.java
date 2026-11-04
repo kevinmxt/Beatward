@@ -1,5 +1,6 @@
 package dev.beatward.heartbeat;
 
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
 import dev.beatward.incident.IncidentStatus;
@@ -67,6 +68,9 @@ class HeartbeatTimeoutIT {
 
     @Autowired
     MonitorService monitorService;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @Autowired
     HeartbeatService heartbeatService;
@@ -376,7 +380,7 @@ class HeartbeatTimeoutIT {
     @Test
     void heartbeatAndHttpSchedulesDoNotPickEachOther() {
         Heartbeat heartbeat = createHeartbeat("cron", 60, 60, true);
-        MonitorCreationResult http = monitorService.create(httpInput());
+        MonitorCreationResult http = monitorService.create(httpInput(), ownerId());
         CLOCK.advance(Duration.ofSeconds(121));
 
         List<Long> heartbeatDue = monitorRepository.findDueHeartbeatIds(
@@ -389,8 +393,12 @@ class HeartbeatTimeoutIT {
 
     private Heartbeat createHeartbeat(String name, int interval, int grace, boolean enabled) {
         MonitorCreationResult result = monitorService.create(
-                input(name, interval, grace, enabled));
+                input(name, interval, grace, enabled), ownerId());
         return new Heartbeat(result.monitor().getId(), result.heartbeatToken());
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     private static MonitorConfigInput input(String name, int interval, int grace, boolean enabled) {

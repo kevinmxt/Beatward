@@ -2,6 +2,7 @@ package dev.beatward.notification;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
 import dev.beatward.incident.IncidentStatus;
@@ -90,6 +91,9 @@ class NotificationFlowIT {
 
     @Autowired
     MonitorService monitorService;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @Autowired
     ProbeService probeService;
@@ -547,7 +551,11 @@ class NotificationFlowIT {
                 299,
                 true,
                 null,
-                null)).monitor();
+                null), ownerId()).monitor();
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     private void probe(MonitorEntity monitor) {
