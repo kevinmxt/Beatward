@@ -60,8 +60,10 @@ public class MonitorController {
     @GetMapping
     public PageResponse<MonitorResponse> list(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Page<MonitorEntity> result = monitorService.list(page, size);
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        Page<MonitorEntity> result = monitorService.listForUser(userId, page, size);
         List<MonitorEntity> monitors = result.getContent();
         List<Long> monitorIds = monitors.stream().map(MonitorEntity::getId).toList();
         Map<Long, Long> durations = monitorService.latestCheckDurations(monitorIds);
@@ -72,8 +74,9 @@ public class MonitorController {
     }
 
     @GetMapping("/{id}")
-    public MonitorResponse get(@PathVariable Long id) {
-        MonitorEntity monitor = monitorService.get(id);
+    public MonitorResponse get(@PathVariable Long id, Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        MonitorEntity monitor = monitorService.getForUser(id, userId);
         return MonitorResponse.from(monitor, null, monitorService.latestCheckDuration(id));
     }
 
@@ -81,8 +84,10 @@ public class MonitorController {
     public PageResponse<CheckResultResponse> checks(
             @PathVariable Long id,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Page<CheckResultEntity> result = checkResultQueryService.listByMonitor(id, page, size);
+            @RequestParam(defaultValue = "20") int size,
+            Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        Page<CheckResultEntity> result = checkResultQueryService.listByMonitor(id, userId, page, size);
         List<CheckResultResponse> items = result.getContent().stream()
                 .map(CheckResultResponse::from)
                 .toList();
@@ -90,14 +95,17 @@ public class MonitorController {
     }
 
     @PutMapping("/{id}")
-    public MonitorResponse update(@PathVariable Long id, @RequestBody MonitorConfigInput request) {
-        MonitorEntity monitor = monitorService.update(id, request);
+    public MonitorResponse update(@PathVariable Long id, @RequestBody MonitorConfigInput request,
+                                  Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        MonitorEntity monitor = monitorService.updateForUser(id, request, userId);
         return MonitorResponse.from(monitor, null, monitorService.latestCheckDuration(id));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
-        monitorService.delete(id);
+    public void delete(@PathVariable Long id, Authentication authentication) {
+        Long userId = currentUserProvider.requireId(authentication);
+        monitorService.deleteForUser(id, userId);
     }
 }

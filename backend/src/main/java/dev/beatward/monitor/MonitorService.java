@@ -109,16 +109,25 @@ public class MonitorService {
         return new MonitorCreationResult(monitor, token);
     }
 
+    /**
+     * Internal/test seam. User-visible reads must use {@link #getForUser}.
+     */
     @Transactional(readOnly = true)
     public MonitorEntity get(Long id) {
         return repository.findById(id).orElseThrow(() -> new MonitorNotFoundException(id));
     }
 
     @Transactional(readOnly = true)
-    public Page<MonitorEntity> list(int page, int size) {
+    public MonitorEntity getForUser(Long id, Long userId) {
+        return repository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new MonitorNotFoundException(id));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MonitorEntity> listForUser(Long userId, int page, int size) {
         PageRequest pageRequest = PageQueries.of(page, size,
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
-        return repository.findAll(pageRequest);
+        return repository.findByUserId(userId, pageRequest);
     }
 
     @Transactional(readOnly = true)
@@ -136,10 +145,24 @@ public class MonitorService {
         return latestCheckDurations(List.of(monitorId)).get(monitorId);
     }
 
+    /**
+     * Internal/test seam. User-visible writes must use {@link #updateForUser}.
+     */
     @Transactional
     public MonitorEntity update(Long id, MonitorConfigInput input) {
         MonitorEntity monitor = repository.findByIdForUpdate(id)
                 .orElseThrow(() -> new MonitorNotFoundException(id));
+        return applyUpdate(monitor, input);
+    }
+
+    @Transactional
+    public MonitorEntity updateForUser(Long id, MonitorConfigInput input, Long userId) {
+        MonitorEntity monitor = repository.findByIdAndUserIdForUpdate(id, userId)
+                .orElseThrow(() -> new MonitorNotFoundException(id));
+        return applyUpdate(monitor, input);
+    }
+
+    private MonitorEntity applyUpdate(MonitorEntity monitor, MonitorConfigInput input) {
         MonitorType requestedType = input.type() == null || input.type().isBlank()
                 ? monitor.getType()
                 : configValidator.parseType(input.type());
@@ -208,9 +231,18 @@ public class MonitorService {
         return repository.save(monitor);
     }
 
+    /**
+     * Internal/test seam. User-visible deletes must use {@link #deleteForUser}.
+     */
     @Transactional
     public void delete(Long id) {
         MonitorEntity monitor = get(id);
+        repository.delete(monitor);
+    }
+
+    @Transactional
+    public void deleteForUser(Long id, Long userId) {
+        MonitorEntity monitor = getForUser(id, userId);
         repository.delete(monitor);
     }
 

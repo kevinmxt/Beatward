@@ -1,5 +1,6 @@
 package dev.beatward.heartbeat;
 
+import dev.beatward.auth.AccountStatus;
 import dev.beatward.auth.AppUserRepository;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentRepository;
@@ -384,7 +385,7 @@ class HeartbeatTimeoutIT {
         CLOCK.advance(Duration.ofSeconds(121));
 
         List<Long> heartbeatDue = monitorRepository.findDueHeartbeatIds(
-                CLOCK.instant(), PageRequest.of(0, 100));
+                CLOCK.instant(), AccountStatus.ACTIVE, PageRequest.of(0, 100));
 
         assertThat(heartbeatDue).contains(heartbeat.id()).doesNotContain(http.monitor().getId());
         assertThatThrownBy(() -> probeService.probe(heartbeat.id()))

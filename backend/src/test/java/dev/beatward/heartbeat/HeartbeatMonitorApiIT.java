@@ -2,6 +2,7 @@ package dev.beatward.heartbeat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.beatward.auth.AccountStatus;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -261,7 +262,8 @@ class HeartbeatMonitorApiIT {
         Timestamp past = Timestamp.from(Instant.now().minusSeconds(60));
         jdbcTemplate.update("update monitor set next_check_at = ? where id in (?, ?)", past, heartbeatId, httpId);
 
-        List<Long> due = monitorRepository.findDueMonitorIds(Instant.now(), PageRequest.of(0, 100));
+        List<Long> due = monitorRepository.findDueMonitorIds(
+                Instant.now(), AccountStatus.ACTIVE, PageRequest.of(0, 100));
 
         assertThat(due).contains(httpId).doesNotContain(heartbeatId);
     }

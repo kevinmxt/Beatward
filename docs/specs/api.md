@@ -42,7 +42,7 @@
 
 - 公开访问：`GET /api/v1/auth/session`、`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`POST /api/v1/auth/register`、`POST /api/v1/auth/reset-password`、`POST /api/v1/heartbeats/{token}`、`GET /actuator/health` 及其健康分组。
 - `PUT /api/v1/auth/password` 要求任意已认证账号；`/api/v1/admin/**` 与 `/actuator/metrics` 要求 `ADMIN` 角色。
-- Phase 4C-1 期间业务接口（Monitor、Incident、心跳凭据）仍要求 `ADMIN`，待 4C-2 归属隔离落地后开放给已认证 `USER` 并按当前用户过滤。
+- 业务接口（Monitor、Incident、心跳凭据）要求任意已认证账号，并按当前用户的 `monitor.user_id` 归属过滤；跨用户访问统一返回 404，管理员默认也不能读取他人业务数据。列表过滤器指向他人资源（如 `monitor_id`）时返回空结果，不返回 404。
 - 注册与重置接口受 CSRF 保护并分别按客户端地址与邀请码/重置码摘要限流；超限返回 429 `RATE_LIMITED`。
 - 未认证请求返回 401 `UNAUTHORIZED`，不得重定向到 HTML 登录页。
 - 登录、登出、改密与所有非 GET 管理请求必须携带 `X-XSRF-TOKEN`；缺失或不匹配返回 403 `CSRF_INVALID`。心跳上报不使用 Cookie 认证，豁免 CSRF。
@@ -63,7 +63,7 @@ Monitor 的请求与响应包含 `failureThreshold` 与 `recoveryThreshold`（�
 
 ### 心跳上报与令牌管理
 
-- `POST /api/v1/heartbeats/{token}`：有效令牌返回 204 且不解析请求体；更新 `lastHeartbeatAt`、`lastCheckedAt`、`lastSuccessAt`，状态置 `UP`，顺延 `nextCheckAt`，并写入一条成功 CheckResult。通过请求防护后，无效、已撤销、不存在或所属监控项已禁用的令牌统一返回 404 `HEARTBEAT_NOT_FOUND`，不区分原因。
+- `POST /api/v1/heartbeats/{token}`：有效令牌返回 204 且不解析请求体；更新 `lastHeartbeatAt`、`lastCheckedAt`、`lastSuccessAt`，状态置 `UP`，顺延 `nextCheckAt`，并写入一条成功 CheckResult。通过请求防护后，无效、已撤销、不存在、所属监控项已禁用或所属账号已禁用的令牌统一返回 404 `HEARTBEAT_NOT_FOUND`，不区分原因。
 - `POST /api/v1/monitors/{id}/heartbeat-token`：轮换令牌，返回 200 与仅此一次可见的 `heartbeatToken`；旧令牌立即失效；禁用状态仍允许。非心跳类型返回 400 `NOT_HEARTBEAT_MONITOR`；监控项不存在返回 404 `MONITOR_NOT_FOUND`。
 - `DELETE /api/v1/monitors/{id}/heartbeat-token`：撤销令牌，幂等返回 204；禁用状态仍允许；之后上报返回 404。
 - 防护规则的参数与信任边界见 [`heartbeat.md`](heartbeat.md#上报接口)；超限分别返回 429 `RATE_LIMITED`（带 `Retry-After`）、413 `PAYLOAD_TOO_LARGE`、400 `HTTPS_REQUIRED`。

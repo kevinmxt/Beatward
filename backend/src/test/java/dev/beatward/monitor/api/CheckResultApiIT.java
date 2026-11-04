@@ -1,5 +1,6 @@
 package dev.beatward.monitor.api;
 
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
 import dev.beatward.monitor.MonitorStatus;
@@ -44,10 +45,16 @@ class CheckResultApiIT {
     @Autowired
     CheckResultRepository checkResultRepository;
 
+    @Autowired
+    AppUserRepository userRepository;
+
+    private Long adminId;
+
     @BeforeEach
     void cleanDatabase() {
         checkResultRepository.deleteAll();
         monitorRepository.deleteAll();
+        adminId = userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     @Test
@@ -148,9 +155,10 @@ class CheckResultApiIT {
                 .andExpect(jsonPath("$.size").value(100));
     }
 
-    private static MonitorEntity newMonitor(String name) {
+    private MonitorEntity newMonitor(String name) {
         Instant now = Instant.parse("2026-10-21T08:00:00Z");
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(adminId);
         monitor.setName(name);
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl("http://8.8.8.8/health");

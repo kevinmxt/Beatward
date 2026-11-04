@@ -1,5 +1,6 @@
 package dev.beatward.monitor.probe;
 
+import dev.beatward.auth.AccountActivity;
 import dev.beatward.incident.IncidentService;
 import dev.beatward.monitor.MonitorDisabledException;
 import dev.beatward.monitor.MonitorEntity;
@@ -20,24 +21,27 @@ public class ProbeService {
     private final CheckResultRepository checkResultRepository;
     private final HttpProbeExecutor executor;
     private final IncidentService incidentService;
+    private final AccountActivity accountActivity;
     private final TransactionTemplate transactionTemplate;
 
     public ProbeService(MonitorRepository monitorRepository,
                         CheckResultRepository checkResultRepository,
                         HttpProbeExecutor executor,
                         IncidentService incidentService,
+                        AccountActivity accountActivity,
                         PlatformTransactionManager transactionManager) {
         this.monitorRepository = monitorRepository;
         this.checkResultRepository = checkResultRepository;
         this.executor = executor;
         this.incidentService = incidentService;
+        this.accountActivity = accountActivity;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     public Optional<CheckResultEntity> probe(Long monitorId) {
         MonitorEntity monitor = monitorRepository.findById(monitorId)
                 .orElseThrow(() -> new MonitorNotFoundException(monitorId));
-        if (!monitor.isEnabled()) {
+        if (!monitor.isEnabled() || !accountActivity.isActive(monitor.getUserId())) {
             throw new MonitorDisabledException(monitorId);
         }
         if (monitor.getType() != MonitorType.HTTP) {
@@ -57,6 +61,9 @@ public class ProbeService {
         }
 
         MonitorEntity monitor = locked.get();
+        if (!accountActivity.isActive(monitor.getUserId())) {
+            return Optional.empty();
+        }
         monitor.recordProbeOutcome(outcome.success());
         monitor.setLastCheckedAt(outcome.finishedAt());
         if (outcome.success()) {

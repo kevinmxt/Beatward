@@ -1,5 +1,6 @@
 package dev.beatward.heartbeat;
 
+import dev.beatward.auth.AccountActivity;
 import dev.beatward.incident.IncidentService;
 import dev.beatward.monitor.CheckFailureType;
 import dev.beatward.monitor.MonitorEntity;
@@ -20,22 +21,26 @@ public class HeartbeatTimeoutService {
     private final MonitorRepository monitorRepository;
     private final IncidentService incidentService;
     private final CheckResultRepository checkResultRepository;
+    private final AccountActivity accountActivity;
     private final Clock clock;
 
     public HeartbeatTimeoutService(MonitorRepository monitorRepository,
                                    IncidentService incidentService,
                                    CheckResultRepository checkResultRepository,
+                                   AccountActivity accountActivity,
                                    Clock clock) {
         this.monitorRepository = monitorRepository;
         this.incidentService = incidentService;
         this.checkResultRepository = checkResultRepository;
+        this.accountActivity = accountActivity;
         this.clock = clock;
     }
 
     @Transactional
     public void checkTimeout(Long monitorId) {
         MonitorEntity monitor = monitorRepository.findByIdForUpdate(monitorId).orElse(null);
-        if (monitor == null || monitor.getType() != MonitorType.HEARTBEAT || !monitor.isEnabled()) {
+        if (monitor == null || monitor.getType() != MonitorType.HEARTBEAT || !monitor.isEnabled()
+                || !accountActivity.isActive(monitor.getUserId())) {
             return;
         }
 

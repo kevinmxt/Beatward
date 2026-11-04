@@ -22,8 +22,8 @@ public class CheckResultQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CheckResultEntity> listByMonitor(Long monitorId, int page, int size) {
-        if (!monitorRepository.existsById(monitorId)) {
+    public Page<CheckResultEntity> listByMonitor(Long monitorId, Long userId, int page, int size) {
+        if (!monitorRepository.existsByIdAndUserId(monitorId, userId)) {
             throw new MonitorNotFoundException(monitorId);
         }
         PageRequest pageRequest = PageQueries.of(page, size,

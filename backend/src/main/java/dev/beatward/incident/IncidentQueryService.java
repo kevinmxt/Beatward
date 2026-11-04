@@ -32,15 +32,16 @@ public class IncidentQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Page<IncidentEntity> list(IncidentStatus status, Long monitorId, int page, int size) {
+    public Page<IncidentEntity> listForUser(Long userId, IncidentStatus status, Long monitorId,
+                                            int page, int size) {
         PageRequest pageRequest = PageQueries.of(page, size,
                 Sort.by(Sort.Order.desc("startedAt"), Sort.Order.desc("id")));
-        return incidentRepository.search(status, monitorId, pageRequest);
+        return incidentRepository.searchForUser(userId, status, monitorId, pageRequest);
     }
 
     @Transactional(readOnly = true)
-    public IncidentEntity get(Long id) {
-        return incidentRepository.findById(id)
+    public IncidentEntity getForUser(Long id, Long userId) {
+        return incidentRepository.findByIdForUser(id, userId)
                 .orElseThrow(() -> new IncidentNotFoundException(id));
     }
 

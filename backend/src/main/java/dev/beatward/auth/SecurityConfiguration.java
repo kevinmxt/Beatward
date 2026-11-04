@@ -92,8 +92,10 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/heartbeats/*").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .requestMatchers("/api/v1/**", "/actuator/metrics", "/actuator/metrics/**")
+                        .requestMatchers("/api/v1/admin/**",
+                                "/actuator/metrics", "/actuator/metrics/**")
                         .hasRole("ADMIN")
+                        .requestMatchers("/api/v1/**").authenticated()
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authErrorWriter)

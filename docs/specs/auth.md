@@ -88,9 +88,9 @@
 - `POST /api/v1/heartbeats/{token}`
 - `GET /actuator/health` 及其健康分组
 
-`PUT /api/v1/auth/password` 要求任意已认证账号。`/api/v1/admin/**` 与 `/actuator/metrics` 要求 `ADMIN` 角色。
+`/api/v1/admin/**` 与 `/actuator/metrics` 要求 `ADMIN` 角色；`PUT /api/v1/auth/password` 要求任意已认证账号。
 
-业务 API（Monitor、Incident、心跳凭据）的边界：Phase 4C-1 期间仍要求 `ADMIN`，因为 Monitor 归属隔离尚未落地；Phase 4C-2 完成后改为任意已认证账号可访问，并按当前用户归属过滤。该临时限制必须与代码同步移除。
+业务 API（Monitor、Incident、心跳凭据）要求任意已认证账号，并只返回当前用户 `user_id` 归属的数据。跨用户访问返回 404；管理员默认也不能读取其他用户的业务数据。
 
 未认证返回 401，不得重定向到 HTML 登录页。
 
