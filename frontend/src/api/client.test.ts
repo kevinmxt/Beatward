@@ -445,6 +445,17 @@ describe('api client', () => {
     expect(handler).toHaveBeenCalledTimes(1)
   })
 
+  it('treats a disabled account as an expired session for protected requests', async () => {
+    const handler = vi.fn()
+    setUnauthorizedHandler(handler)
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({ code: 'ACCOUNT_DISABLED', message: 'account is disabled', traceId: 't' }, 403),
+    )
+
+    await expect(listMonitors()).rejects.toMatchObject({ code: 'ACCOUNT_DISABLED' })
+    expect(handler).toHaveBeenCalledTimes(1)
+  })
+
   it('does not redirect on failed login or session bootstrap', async () => {
     const handler = vi.fn()
     setUnauthorizedHandler(handler)

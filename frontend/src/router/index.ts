@@ -6,6 +6,7 @@ import {
 } from 'vue-router'
 import { setUnauthorizedHandler } from '../api/client'
 import { authState, clearAuth, ensureSession } from '../auth/session'
+import GettingStartedView from '../views/GettingStartedView.vue'
 import IncidentListView from '../views/IncidentListView.vue'
 import LoginView from '../views/LoginView.vue'
 import MonitorCreateView from '../views/MonitorCreateView.vue'
@@ -13,16 +14,26 @@ import MonitorDetailView from '../views/MonitorDetailView.vue'
 import MonitorEditView from '../views/MonitorEditView.vue'
 import MonitorListView from '../views/MonitorListView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
+import RegisterView from '../views/RegisterView.vue'
+import ResetPasswordView from '../views/ResetPasswordView.vue'
 import SettingsView from '../views/SettingsView.vue'
 
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
+    publicOnly?: boolean
   }
 }
 
 export const routes: RouteRecordRaw[] = [
-  { path: '/login', name: 'login', component: LoginView },
+  { path: '/login', name: 'login', component: LoginView, meta: { publicOnly: true } },
+  { path: '/register', name: 'register', component: RegisterView, meta: { publicOnly: true } },
+  {
+    path: '/reset-password',
+    name: 'reset-password',
+    component: ResetPasswordView,
+    meta: { publicOnly: true },
+  },
   { path: '/', redirect: '/monitors' },
   { path: '/monitors', name: 'monitors', component: MonitorListView, meta: { requiresAuth: true } },
   {
@@ -51,6 +62,12 @@ export const routes: RouteRecordRaw[] = [
     component: IncidentListView,
     meta: { requiresAuth: true },
   },
+  {
+    path: '/getting-started',
+    name: 'getting-started',
+    component: GettingStartedView,
+    meta: { requiresAuth: true },
+  },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ]
@@ -62,7 +79,7 @@ export function createAppRouter(
 
   router.beforeEach(async (to) => {
     await ensureSession()
-    if (to.name === 'login') {
+    if (to.meta.publicOnly) {
       return authState.authenticated ? { path: '/monitors' } : true
     }
     if (to.meta.requiresAuth && !authState.authenticated) {

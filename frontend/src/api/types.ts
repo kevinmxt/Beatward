@@ -114,6 +114,17 @@ export interface PasswordChangeInput {
   newPassword: string
 }
 
+export interface RegisterInput {
+  inviteCode: string
+  username: string
+  password: string
+}
+
+export interface ResetPasswordInput {
+  resetCode: string
+  newPassword: string
+}
+
 export interface IncidentQuery {
   status?: IncidentStatus
   monitorId?: number

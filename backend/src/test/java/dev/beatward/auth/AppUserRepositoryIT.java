@@ -98,6 +98,33 @@ class AppUserRepositoryIT {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @Test
+    void appliesV14AccountModelAndPersistsUserRoleAndStatus() {
+        assertThat(flyway.info().applied())
+                .anySatisfy(info -> assertThat(info.getVersion().getVersion()).isEqualTo("14"));
+
+        AppUserEntity user = user("regular-user");
+        user.setRole(AppRole.USER);
+        user.setStatus(AccountStatus.DISABLED);
+        user.setDisabledAt(Instant.parse("2026-11-01T00:00:00Z"));
+        AppUserEntity saved = repository.saveAndFlush(user);
+
+        AppUserEntity reloaded = repository.findById(saved.getId()).orElseThrow();
+        assertThat(reloaded.getRole()).isEqualTo(AppRole.USER);
+        assertThat(reloaded.getStatus()).isEqualTo(AccountStatus.DISABLED);
+        assertThat(reloaded.getDisabledAt()).isEqualTo(Instant.parse("2026-11-01T00:00:00Z"));
+        assertThat(reloaded.getLastLoginAt()).isNull();
+    }
+
+    @Test
+    void rejectsInvalidAccountStatusAtDatabaseLevel() {
+        assertThatThrownBy(() -> jdbcTemplate.update("""
+                INSERT INTO app_user (username, password_hash, role, status, created_at, updated_at)
+                VALUES (?, ?, 'USER', 'SUSPENDED', NOW(), NOW())
+                """, "bad-status-user", HASH))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
     private AppUserEntity user(String username) {
         Instant now = Instant.parse("2026-10-25T08:00:00Z");
         AppUserEntity user = new AppUserEntity();

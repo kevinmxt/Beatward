@@ -6,26 +6,54 @@
 
 ## 账号与凭据
 
-- 账号唯一事实来源是数据库表 `app_user`：`id`、`username`、`password_hash`、`role`、`created_at`、`updated_at`。
+- 账号唯一事实来源是数据库表 `app_user`：`id`、`username`、`password_hash`、`role`、`status`、`disabled_at`、`last_login_at`、`created_at`、`updated_at`。
 - `username` 唯一，1–64 字符，匹配 `[A-Za-z0-9._-]`，区分大小写；输入前后空白会被裁剪。
 - `password_hash` 使用 Spring Security `DelegatingPasswordEncoder`，格式为 `{bcrypt}$2a$12$...`（也接受 `$2b$`、`$2y$`）。数据库不保存明文或可逆密文。
-- `role` 取 `ADMIN`，`CHECK` 约束暂只允许该值；将来增加角色时通过迁移扩展。
-- 认证使用数据库查询得到的 `UserDetails`；MVP 只有一个管理员账号。
+- `role` 取 `ADMIN` 或 `USER`，由 CHECK 约束保证；自助注册只能创建 `USER`，`ADMIN` 来自引导或人工迁移。
+- `status` 取 `ACTIVE` 或 `DISABLED`，由 CHECK 约束保证；禁用时记录 `disabled_at`。
+- 认证使用数据库查询得到的 `UserDetails`；系统支持多个账号。
 - 密码规则：12–128 字符，不强制字符组合，前后不裁剪空白；不得与当前密码相同。
+- 登录成功更新 `last_login_at`，使用定向 UPDATE，不整实体回写，避免覆盖并发发生的禁用或改密。
 
 ### 首次引导
 
 - `app_user` 为空时，启动阶段使用 `BEATWARD_AUTH_BOOTSTRAP_USERNAME` 与 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 创建唯一管理员。
 - 用户表为空且任一变量缺失、或哈希格式非法时，应用拒绝启动。
 - 用户表非空时忽略引导变量；若仍提供变量，记录 WARN 而不覆盖已有账号。
-- 引导变量只用于首次建号。忘记密码时按 [`../quality/deployment.md`](../quality/deployment.md) 的管理员密码重置流程生成新哈希、更新对应账号并重启应用，不通过重新启动覆盖。
+- 引导变量只用于首次建号。忘记密码时优先使用一次性重置码；管理员仍可按 [`../quality/deployment.md`](../quality/deployment.md) 的流程生成新哈希并重启应用。
+
+### 邀请码注册
+
+- 管理员生成邀请码，设置备注、最大注册数（1–100，默认 1）和有效期（默认 7 天）。
+- 邀请码为高熵随机值，明文只在创建响应中返回一次；数据库只保存 SHA-256 摘要。
+- 注册字段为邀请码、用户名、密码；不收集邮箱或手机号。
+- 注册在单个事务内校验邀请码未撤销、未过期、未用尽，并原子占用一个名额；用户名冲突或建号失败时回滚名额。
+- 注册只能创建 `USER`、`ACTIVE` 账号；成功后自动登录并进入 `/getting-started`。
+- 邀请码错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`；用户名冲突 `USERNAME_TAKEN`。
+- 注册接口按客户端地址与邀请码摘要分别限流，与登录限流使用独立键空间。
+
+### 密码重置
+
+- 管理员为指定用户生成一次性重置码；明文只在响应中返回一次，数据库只保存 SHA-256 摘要。
+- 重置码默认 24 小时有效且单次使用；用户提交重置码和新密码。
+- 新密码须满足密码规则且不得与当前密码相同；校验失败不消耗重置码。
+- 成功后在提交事务中更新密码哈希，并使该用户全部会话失效。
+- 无效、过期或已使用的重置码统一返回 400 `RESET_TOKEN_INVALID`。
+
+### 账号状态
+
+- `DISABLED` 账号登录时，凭据正确返回 403 `ACCOUNT_DISABLED`；凭据错误仍返回 401 `INVALID_CREDENTIALS`，避免向无效密码请求泄露账号状态。
+- 已有会话在下一次请求时被拒绝并失效，返回 403 `ACCOUNT_DISABLED`。
+- 重新启用只恢复登录权限，不修改现有 Monitor 的启用状态。
 
 ## 登录与会话
 
 | 方法 | 路径 | 认证 | 说明 |
 |---|---|---|---|
 | GET | `/api/v1/auth/session` | 公开 | 返回 `{authenticated, username, role, csrfToken}`；同时下发或刷新 `XSRF-TOKEN` Cookie；未登录返回 200 且 `authenticated = false` |
-| POST | `/api/v1/auth/login` | 公开 + CSRF | 请求 `{username, password}`；成功 200 `{username, role}`；失败 401 `INVALID_CREDENTIALS`；限流 429 `RATE_LIMITED` |
+| POST | `/api/v1/auth/login` | 公开 + CSRF | 请求 `{username, password}`；成功 200 `{username, role}`；失败 401 `INVALID_CREDENTIALS`；禁用账号凭据正确时 403 `ACCOUNT_DISABLED`；限流 429 `RATE_LIMITED` |
+| POST | `/api/v1/auth/register` | 公开 + CSRF | 请求 `{inviteCode, username, password}`；成功 201 `{username, role}` 并自动登录 |
+| POST | `/api/v1/auth/reset-password` | 公开 + CSRF | 请求 `{resetCode, newPassword}`；成功 204 并使该用户全部会话失效 |
 | POST | `/api/v1/auth/logout` | 公开 + CSRF | 始终返回 204；会话不存在时不报错 |
 | PUT | `/api/v1/auth/password` | 需认证 + CSRF | 请求 `{currentPassword, newPassword}`；成功 204；当前密码错误 400 `INVALID_CURRENT_PASSWORD` |
 
@@ -55,10 +83,16 @@
 - `GET /api/v1/auth/session`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/reset-password`
 - `POST /api/v1/heartbeats/{token}`
 - `GET /actuator/health` 及其健康分组
 
-其余 `/api/v1/**` 与 `/actuator/metrics` 全部要求已认证且具备 `ADMIN` 角色。未认证返回 401，不得重定向到 HTML 登录页。
+`PUT /api/v1/auth/password` 要求任意已认证账号。`/api/v1/admin/**` 与 `/actuator/metrics` 要求 `ADMIN` 角色。
+
+业务 API（Monitor、Incident、心跳凭据）的边界：Phase 4C-1 期间仍要求 `ADMIN`，因为 Monitor 归属隔离尚未落地；Phase 4C-2 完成后改为任意已认证账号可访问，并按当前用户归属过滤。该临时限制必须与代码同步移除。
+
+未认证返回 401，不得重定向到 HTML 登录页。
 
 静态前端资源不属于管理 API；Phase 5 托管时前端壳可以公开，数据仍由上述边界保护。
 
@@ -70,11 +104,15 @@
 |---|---|---|
 | 401 | `UNAUTHORIZED` | 缺少会话、会话过期或已失效 |
 | 401 | `INVALID_CREDENTIALS` | 登录用户名或密码错误（不区分原因） |
+| 403 | `ACCOUNT_DISABLED` | 账号已禁用且凭据正确，或已有会话所属账号被禁用 |
 | 403 | `CSRF_INVALID` | CSRF 令牌缺失或不匹配 |
-| 403 | `FORBIDDEN` | 已认证但角色不足（当前单角色下仅保留契约） |
-| 429 | `RATE_LIMITED` | 登录尝试配额已满（进行中与失败合计 5 次）或限流跟踪键容量耗尽，响应带 `Retry-After` |
+| 403 | `FORBIDDEN` | 已认证但角色不足 |
+| 429 | `RATE_LIMITED` | 登录/注册/重置尝试配额已满，或限流跟踪键容量耗尽，响应带 `Retry-After` |
 | 400 | `INVALID_CURRENT_PASSWORD` | 改密时当前密码错误 |
-| 400 | `VALIDATION_ERROR` | 输入字段不合法 |
+| 400 | `INVITE_INVALID` / `INVITE_EXPIRED` / `INVITE_REVOKED` / `INVITE_EXHAUSTED` | 邀请码不存在、过期、撤销或用尽 |
+| 400 | `USERNAME_TAKEN` | 注册用户名已存在 |
+| 400 | `RESET_TOKEN_INVALID` | 重置码无效、过期或已使用 |
+| 400 | `VALIDATION_ERROR` | 输入字段不合法，或新密码与当前密码相同 |
 
 ## 登录失败限流
 
@@ -139,21 +177,27 @@ export BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH='{bcrypt}$2y$12$...'
 
 ## 前端交互约束
 
-- `/login` 公开，其余管理路由需要会话；认证状态只保存在内存，不写 `localStorage`/`sessionStorage`。
-- 任一管理请求返回 401 时清空状态并跳转 `/login?redirect=<站内路径>&expired=1`；登录成功后只接受以单个 `/` 开头的站内路径作为回跳目标。
-- 登录页在已认证时直接进入 `/monitors`。
+- `/login`、`/register`、`/reset-password` 公开；`/getting-started` 与其余管理路由需要会话。认证状态只保存在内存，不写 `localStorage`/`sessionStorage`。
+- 任一管理请求返回 401（或 403 `ACCOUNT_DISABLED`）时清空状态并跳转 `/login?redirect=<站内路径>&expired=1`；登录成功后只接受以单个 `/` 开头的站内路径作为回跳目标。
+- 已认证用户访问 `/login`、`/register`、`/reset-password` 时直接进入 `/monitors`。
+- 注册成功自动登录并进入 `/getting-started`；重置密码成功返回 `/login?reset=1`。
 - 顶栏显示用户名、设置入口与登出。
 - 改密成功后提示“请重新登录”并跳转登录页。
-- 登录页对 401 显示通用“用户名或密码错误”，对 429 显示可重试秒数。
+- 登录页对 401 显示通用“用户名或密码错误”，对 403 `ACCOUNT_DISABLED` 显示“账号已被禁用，请联系管理员”，对 429 显示可重试秒数。
+- 注册页对邀请码无效、过期、撤销、用尽与用户名冲突给出可操作提示；重置页对无效重置码给出可操作提示。
 
 ## 验收
 
 - 未认证访问任何管理接口返回 401 错误信封。
 - 缺少 CSRF 的写请求返回 403 `CSRF_INVALID`。
 - 正确凭据可登录、登出；错误凭据不泄露账号是否存在。
+- 禁用账号在凭据正确时返回 403 `ACCOUNT_DISABLED`，凭据错误时仍返回 401；禁用后已有会话在下一次请求时失效。
 - 连续失败或并发尝试触发 429 且不越过配额，`Retry-After` 为正整数；成功后计数清零。
 - 跟踪键达到上限时先回收过期窗口；仍满则确定性拒绝新键并记录日志，已有键仍按配额执行。
+- 注册限流与登录限流使用独立键空间，邀请码尝试不能耗尽登录限流容量。
+- 有效邀请码并发注册不超卖；过期、撤销、用尽分别返回专用错误码；用户名冲突不消耗名额。
+- 注册成功自动登录并创建 `USER`/`ACTIVE` 账号；重置码单次有效，成功后旧密码与全部会话失效。
 - 会话空闲与绝对期限生效；重启后需要重新登录。
-- 改密后旧密码失效，已有会话全部失效。
+- 改密与重置密码后旧密码失效，已有会话全部失效。
 - 空用户表缺少引导变量、非法哈希、非回环监听且未启用 Secure Cookie 时拒绝启动。
 - 心跳上报与 `/actuator/health` 在未登录时仍按各自规范工作。

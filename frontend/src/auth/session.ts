@@ -4,9 +4,16 @@ import {
   getSession,
   login as loginRequest,
   logout as logoutRequest,
+  register as registerRequest,
+  resetPassword as resetPasswordRequest,
   setCsrfToken,
 } from '../api/client'
-import type { PasswordChangeInput, SessionInfo } from '../api/types'
+import type {
+  PasswordChangeInput,
+  RegisterInput,
+  ResetPasswordInput,
+  SessionInfo,
+} from '../api/types'
 
 export interface AuthState {
   initialized: boolean
@@ -72,5 +79,15 @@ export async function logout(): Promise<void> {
 
 export async function changePassword(input: PasswordChangeInput): Promise<void> {
   await changePasswordRequest(input)
+  clearAuth()
+}
+
+export async function register(input: RegisterInput): Promise<void> {
+  const result = await registerRequest(input)
+  setAuth(true, result.username, result.role)
+}
+
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  await resetPasswordRequest(input)
   clearAuth()
 }

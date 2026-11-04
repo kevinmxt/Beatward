@@ -152,6 +152,24 @@ a:hover {
   border-radius: 6px;
 }
 
+.auth-links {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.getting-started-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 20px;
+}
+
+.getting-started-steps h2 {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
 .page-header {
   display: flex;
   align-items: flex-start;

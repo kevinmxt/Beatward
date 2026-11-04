@@ -13,6 +13,7 @@ const submitting = ref(false)
 const errorMessage = ref<string | null>(null)
 const expired = computed(() => route.query.expired === '1')
 const changed = computed(() => route.query.changed === '1')
+const reset = computed(() => route.query.reset === '1')
 
 async function submit(): Promise<void> {
   errorMessage.value = null
@@ -39,6 +40,7 @@ async function submit(): Promise<void> {
       <h1>登录 Beatward</h1>
       <p v-if="expired" class="notice">登录状态已过期，请重新登录。</p>
       <p v-if="changed" class="notice">密码已修改，请重新登录。</p>
+      <p v-if="reset" class="notice">密码已重置，请使用新密码登录。</p>
 
       <form class="auth-form" @submit.prevent="submit">
         <div class="form-field">
@@ -68,6 +70,13 @@ async function submit(): Promise<void> {
           {{ submitting ? '登录中…' : '登录' }}
         </button>
       </form>
+
+      <p class="auth-links">
+        没有账号？<RouterLink to="/register">使用邀请码注册</RouterLink>
+      </p>
+      <p class="auth-links">
+        忘记密码？<RouterLink to="/reset-password">使用重置码重置</RouterLink>
+      </p>
     </div>
   </section>
 </template>

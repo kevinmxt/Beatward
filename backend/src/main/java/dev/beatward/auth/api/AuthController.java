@@ -1,9 +1,11 @@
 package dev.beatward.auth.api;
 
-import dev.beatward.auth.AbsoluteSessionTimeoutFilter;
+import dev.beatward.auth.AccountStatus;
+import dev.beatward.auth.AccountDisabledException;
 import dev.beatward.auth.AdminSessionRegistry;
 import dev.beatward.auth.AppUserEntity;
 import dev.beatward.auth.AppUserRepository;
+import dev.beatward.auth.AuthSessionManager;
 import dev.beatward.auth.InvalidCredentialsException;
 import dev.beatward.auth.InvalidCurrentPasswordException;
 import dev.beatward.auth.InvalidNewPasswordException;
@@ -23,10 +25,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -51,7 +51,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final LoginRateLimiter rateLimiter;
     private final AdminSessionRegistry sessionRegistry;
-    private final SecurityContextRepository securityContextRepository;
+    private final AuthSessionManager sessionManager;
     private final CsrfTokenRepository csrfTokenRepository;
     private final Clock clock;
 
@@ -60,7 +60,7 @@ public class AuthController {
                           PasswordEncoder passwordEncoder,
                           LoginRateLimiter rateLimiter,
                           AdminSessionRegistry sessionRegistry,
-                          SecurityContextRepository securityContextRepository,
+                          AuthSessionManager sessionManager,
                           CsrfTokenRepository csrfTokenRepository,
                           Clock clock) {
         this.authenticationManager = authenticationManager;
@@ -68,7 +68,7 @@ public class AuthController {
         this.passwordEncoder = passwordEncoder;
         this.rateLimiter = rateLimiter;
         this.sessionRegistry = sessionRegistry;
-        this.securityContextRepository = securityContextRepository;
+        this.sessionManager = sessionManager;
         this.csrfTokenRepository = csrfTokenRepository;
         this.clock = clock;
     }
@@ -125,17 +125,19 @@ public class AuthController {
                 throw new InvalidCredentialsException();
             }
 
+            AppUserEntity user = userRepository.findByUsernameInput(authentication.getName())
+                    .orElseThrow(InvalidCredentialsException::new);
+            if (user.getStatus() == AccountStatus.DISABLED) {
+                log.warn("Login rejected for disabled account, remoteAddress={}, traceId={}",
+                        request.getRemoteAddr(), TraceIdFilter.currentTraceId(request));
+                throw new AccountDisabledException();
+            }
+
             rateLimiter.recordSuccess(attempt);
             authenticated = true;
-            rotateSession(request);
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authentication);
-            SecurityContextHolder.setContext(context);
-            HttpSession session = request.getSession(true);
-            session.setAttribute(AbsoluteSessionTimeoutFilter.SESSION_CREATED_AT_ATTRIBUTE, clock.instant());
-            sessionRegistry.register(authentication.getName(), session);
-            securityContextRepository.saveContext(context, request, response);
-            log.info("Admin login succeeded, remoteAddress={}, traceId={}",
+            recordLogin(user.getUsername());
+            sessionManager.establish(authentication, request, response);
+            log.info("Login succeeded, remoteAddress={}, traceId={}",
                     request.getRemoteAddr(), TraceIdFilter.currentTraceId(request));
             return new LoginResponse(authentication.getName(), roleOf(authentication));
         } finally {
@@ -197,22 +199,13 @@ public class AuthController {
                 request.getRemoteAddr(), TraceIdFilter.currentTraceId(request));
     }
 
-    private static void logLoginFailure(HttpServletRequest request) {
-        log.warn("Admin login failed, remoteAddress={}, traceId={}",
-                request.getRemoteAddr(), TraceIdFilter.currentTraceId(request));
+    private void recordLogin(String username) {
+        userRepository.updateLastLoginAt(username, clock.instant());
     }
 
-    private void rotateSession(HttpServletRequest request) {
-        HttpSession existing = request.getSession(false);
-        if (existing == null) {
-            return;
-        }
-        sessionRegistry.unregister(existing.getId());
-        try {
-            existing.invalidate();
-        } catch (IllegalStateException ignored) {
-            // Already expired by the container.
-        }
+    private static void logLoginFailure(HttpServletRequest request) {
+        log.warn("Login failed, remoteAddress={}, traceId={}",
+                request.getRemoteAddr(), TraceIdFilter.currentTraceId(request));
     }
 
     private static boolean isAuthenticated(Authentication authentication) {

@@ -29,6 +29,16 @@ public class AppUserEntity {
     @Column(nullable = false, length = 20)
     private AppRole role = AppRole.ADMIN;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AccountStatus status = AccountStatus.ACTIVE;
+
+    @Column(name = "disabled_at")
+    private Instant disabledAt;
+
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -61,6 +71,30 @@ public class AppUserEntity {
 
     public void setRole(AppRole role) {
         this.role = role;
+    }
+
+    public AccountStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AccountStatus status) {
+        this.status = status;
+    }
+
+    public Instant getDisabledAt() {
+        return disabledAt;
+    }
+
+    public void setDisabledAt(Instant disabledAt) {
+        this.disabledAt = disabledAt;
+    }
+
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(Instant lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
     }
 
     public Instant getCreatedAt() {

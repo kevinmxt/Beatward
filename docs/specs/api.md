@@ -13,9 +13,13 @@
 | 方法 | 路径 | 用途 |
 |---|---|---|
 | GET | `/api/v1/auth/session` | 会话引导：返回认证状态并下发/刷新 CSRF 令牌 |
-| POST | `/api/v1/auth/login` | 管理员登录 |
-| POST | `/api/v1/auth/logout` | 管理员登出 |
-| PUT | `/api/v1/auth/password` | 修改管理员密码 |
+| POST | `/api/v1/auth/login` | 账号登录 |
+| POST | `/api/v1/auth/logout` | 账号登出 |
+| PUT | `/api/v1/auth/password` | 修改自己的密码 |
+| POST | `/api/v1/auth/register` | 使用邀请码注册并自动登录 |
+| POST | `/api/v1/auth/reset-password` | 使用一次性重置码设置新密码 |
+| POST | `/api/v1/admin/invite-codes` | 管理员创建邀请码（明文只返回一次） |
+| POST | `/api/v1/admin/users/{id}/reset-code` | 管理员为用户生成一次性重置码（明文只返回一次） |
 | GET | `/api/v1/monitors` | 查询监控项 |
 | POST | `/api/v1/monitors` | 创建监控项 |
 | GET | `/api/v1/monitors/{id}` | 查询监控详情 |
@@ -32,10 +36,14 @@
 
 路径可随实现调整，但必须维护一致的 API 文档和测试。
 
+错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。
+
 ## 认证与访问边界
 
-- 公开访问：`GET /api/v1/auth/session`、`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`POST /api/v1/heartbeats/{token}`、`GET /actuator/health` 及其健康分组。
-- 其余 `/api/v1/**` 与 `/actuator/metrics` 要求有效会话且具备 `ADMIN` 角色。
+- 公开访问：`GET /api/v1/auth/session`、`POST /api/v1/auth/login`、`POST /api/v1/auth/logout`、`POST /api/v1/auth/register`、`POST /api/v1/auth/reset-password`、`POST /api/v1/heartbeats/{token}`、`GET /actuator/health` 及其健康分组。
+- `PUT /api/v1/auth/password` 要求任意已认证账号；`/api/v1/admin/**` 与 `/actuator/metrics` 要求 `ADMIN` 角色。
+- Phase 4C-1 期间业务接口（Monitor、Incident、心跳凭据）仍要求 `ADMIN`，待 4C-2 归属隔离落地后开放给已认证 `USER` 并按当前用户过滤。
+- 注册与重置接口受 CSRF 保护并分别按客户端地址与邀请码/重置码摘要限流；超限返回 429 `RATE_LIMITED`。
 - 未认证请求返回 401 `UNAUTHORIZED`，不得重定向到 HTML 登录页。
 - 登录、登出、改密与所有非 GET 管理请求必须携带 `X-XSRF-TOKEN`；缺失或不匹配返回 403 `CSRF_INVALID`。心跳上报不使用 Cookie 认证，豁免 CSRF。
 - 登录失败按用户名与远端地址限流；超限返回 429 `RATE_LIMITED` 并带 `Retry-After`。
