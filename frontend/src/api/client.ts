@@ -9,6 +9,8 @@ import type {
   MonitorInput,
   PageResponse,
   PasswordChangeInput,
+  RegisterInput,
+  ResetPasswordInput,
   SessionInfo,
 } from './types'
 
@@ -94,7 +96,7 @@ async function request<T>(
         }
         return request<T>(path, init, { ...options, csrfRetried: true })
       }
-      if (response.status === 401 && !options.skipAuthHandling) {
+      if ((response.status === 401 || error.code === 'ACCOUNT_DISABLED') && !options.skipAuthHandling) {
         unauthorizedHandler?.()
       }
       throw error
@@ -240,6 +242,30 @@ export function changePassword(input: PasswordChangeInput): Promise<void> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   })
+}
+
+export function register(input: RegisterInput): Promise<LoginResponse> {
+  return request<LoginResponse>(
+    '/api/v1/auth/register',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+    { skipAuthHandling: true },
+  )
+}
+
+export function resetPassword(input: ResetPasswordInput): Promise<void> {
+  return request<void>(
+    '/api/v1/auth/reset-password',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    },
+    { skipAuthHandling: true },
+  )
 }
 
 export function listMonitors(page = 0, size = 20): Promise<PageResponse<Monitor>> {

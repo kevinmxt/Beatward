@@ -77,17 +77,45 @@ Phase 2 的计数与阈值在探测写回事务内更新；探测语义配置变
 数据库只保存安全摘要，不保存明文令牌。令牌必须足够随机并可撤销。每个 Monitor 同时最多一个未撤销凭证，由部分唯一索引保证；删除 Monitor 时级联删除凭证。
 
 ## AppUser
-管理后台唯一的账号事实来源。
+账号的唯一事实来源。
 
 核心字段：
 - `id`
 - `username`：唯一、区分大小写，1–64 字符，匹配 `[A-Za-z0-9._-]`；输入前后空白在入库前裁剪
 - `password_hash`：`{bcrypt}$2...`，BCrypt 成本 12；不保存明文或可逆密文
-- `role`：当前只允许 `ADMIN`，由 CHECK 约束保证；增加角色时通过迁移扩展
+- `role`：`ADMIN` 或 `USER`，由 CHECK 约束保证
+- `status`：`ACTIVE` 或 `DISABLED`，默认 `ACTIVE`；禁用时记录 `disabled_at`
+- `last_login_at`：最近一次成功登录时间，可空
 - `created_at`
 - `updated_at`
 
-首次启动时如果表为空，应用使用 `BEATWARD_AUTH_BOOTSTRAP_USERNAME` 与 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 创建唯一管理员；变量缺失、用户名或哈希非法时拒绝启动。表非空时忽略引导变量并记录 WARN，不覆盖已有账号。认证与启动校验行为见 [`specs/auth.md`](../specs/auth.md)。
+首次启动时如果表为空，应用使用 `BEATWARD_AUTH_BOOTSTRAP_USERNAME` 与 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 创建唯一管理员；变量缺失、用户名或哈希非法时拒绝启动。表非空时忽略引导变量并记录 WARN，不覆盖已有账号。自助注册只能创建 `USER`。认证与启动校验行为见 [`specs/auth.md`](../specs/auth.md)。
+
+## InviteCode
+
+- `id`
+- `code_hash`：邀请码的 SHA-256 十六进制摘要，唯一；数据库不保存明文
+- `label`：管理员备注，可空
+- `max_uses`：1–100
+- `used_count`：0 到 `max_uses`
+- `expires_at`
+- `revoked_at`：可空
+- `created_by`：创建管理员 `app_user.id`
+- `created_at`
+
+名额占用使用条件 UPDATE 原子完成，并发注册不超卖；明文只在创建响应中返回一次。
+
+## PasswordResetToken
+
+- `id`
+- `token_hash`：重置码的 SHA-256 十六进制摘要，唯一；数据库不保存明文
+- `user_id`：目标账号
+- `expires_at`：默认创建后 24 小时
+- `used_at`：单次使用，成功后写入
+- `created_by`：生成该码的管理员
+- `created_at`
+
+明文只在生成响应中返回一次。密码更新与 `used_at` 标记在同一事务内完成，成功后使目标账号全部会话失效。
 
 ## NotificationDelivery
 - `id`

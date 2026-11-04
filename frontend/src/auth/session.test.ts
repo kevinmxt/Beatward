@@ -4,6 +4,8 @@ import {
   getSession,
   login as loginRequest,
   logout as logoutRequest,
+  register as registerRequest,
+  resetPassword as resetPasswordRequest,
   setCsrfToken,
 } from '../api/client'
 import {
@@ -13,7 +15,9 @@ import {
   ensureSession,
   login,
   logout,
+  register,
   resetAuthState,
+  resetPassword,
 } from './session'
 
 vi.mock('../api/client', () => ({
@@ -21,6 +25,8 @@ vi.mock('../api/client', () => ({
   login: vi.fn(),
   logout: vi.fn(),
   changePassword: vi.fn(),
+  register: vi.fn(),
+  resetPassword: vi.fn(),
   setCsrfToken: vi.fn(),
 }))
 
@@ -28,6 +34,8 @@ const getSessionMock = vi.mocked(getSession)
 const loginMock = vi.mocked(loginRequest)
 const logoutMock = vi.mocked(logoutRequest)
 const changePasswordMock = vi.mocked(changePasswordRequest)
+const registerMock = vi.mocked(registerRequest)
+const resetPasswordMock = vi.mocked(resetPasswordRequest)
 const setCsrfTokenMock = vi.mocked(setCsrfToken)
 
 describe('auth session', () => {
@@ -104,6 +112,46 @@ describe('auth session', () => {
 
     expect(changePasswordMock).toHaveBeenCalledWith({
       currentPassword: 'old-password-123',
+      newPassword: 'new-password-123',
+    })
+    expect(authState.authenticated).toBe(false)
+  })
+
+  it('stores the authenticated user after registration', async () => {
+    registerMock.mockResolvedValue({ username: 'alice', role: 'USER' })
+
+    await register({
+      inviteCode: 'invite',
+      username: 'alice',
+      password: 'valid-password-123',
+    })
+
+    expect(registerMock).toHaveBeenCalledWith({
+      inviteCode: 'invite',
+      username: 'alice',
+      password: 'valid-password-123',
+    })
+    expect(authState).toMatchObject({
+      initialized: true,
+      authenticated: true,
+      username: 'alice',
+      role: 'USER',
+    })
+  })
+
+  it('clears local authentication after a password reset', async () => {
+    applySession({
+      authenticated: true,
+      username: 'alice',
+      role: 'USER',
+      csrfToken: 'csrf-1',
+    })
+    resetPasswordMock.mockResolvedValue(undefined)
+
+    await resetPassword({ resetCode: 'code', newPassword: 'new-password-123' })
+
+    expect(resetPasswordMock).toHaveBeenCalledWith({
+      resetCode: 'code',
       newPassword: 'new-password-123',
     })
     expect(authState.authenticated).toBe(false)

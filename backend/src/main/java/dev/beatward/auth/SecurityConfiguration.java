@@ -1,5 +1,6 @@
 package dev.beatward.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSessionListener;
 import org.springframework.boot.web.servlet.ServletListenerRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -66,11 +67,14 @@ public class SecurityConfiguration {
                                             SecurityContextRepository securityContextRepository,
                                             CsrfTokenRepository csrfTokenRepository,
                                             AuthErrorWriter authErrorWriter,
+                                            AppUserRepository userRepository,
+                                            ObjectMapper objectMapper,
                                             Clock clock)
             throws Exception {
         CsrfTokenRequestAttributeHandler csrfTokenRequestHandler = new CsrfTokenRequestAttributeHandler();
         csrfTokenRequestHandler.setCsrfRequestAttributeName(null);
         AbsoluteSessionTimeoutFilter absoluteSessionTimeoutFilter = new AbsoluteSessionTimeoutFilter(clock);
+        AccountStatusFilter accountStatusFilter = new AccountStatusFilter(userRepository, objectMapper);
 
         http
                 .csrf(csrf -> csrf
@@ -82,6 +86,9 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/session").permitAll()
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/login", "/api/v1/auth/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/auth/register", "/api/v1/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/auth/password").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/heartbeats/*").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/error").permitAll()
@@ -99,6 +106,7 @@ public class SecurityConfiguration {
                 .logout(AbstractHttpConfigurer::disable);
 
         http.addFilterAfter(absoluteSessionTimeoutFilter, SecurityContextHolderFilter.class);
+        http.addFilterAfter(accountStatusFilter, AbsoluteSessionTimeoutFilter.class);
         return http.build();
     }
 }

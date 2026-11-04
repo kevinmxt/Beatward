@@ -1,6 +1,12 @@
 package dev.beatward.monitor.api;
 
+import dev.beatward.auth.AccountDisabledException;
+import dev.beatward.auth.AuthValidationException;
 import dev.beatward.auth.InvalidCredentialsException;
+import dev.beatward.auth.InviteCodeException;
+import dev.beatward.auth.ResetTokenInvalidException;
+import dev.beatward.auth.UserNotFoundException;
+import dev.beatward.auth.UsernameTakenException;
 import dev.beatward.auth.InvalidCurrentPasswordException;
 import dev.beatward.auth.InvalidNewPasswordException;
 import dev.beatward.auth.LoginRateLimitedException;
@@ -87,6 +93,42 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleHttpsRequired(HttpsRequiredException ex,
                                                                 HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, "HTTPS_REQUIRED", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InviteCodeException.class)
+    public ResponseEntity<ApiErrorResponse> handleInviteCode(InviteCodeException ex,
+                                                             HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, ex.code(), ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UsernameTakenException.class)
+    public ResponseEntity<ApiErrorResponse> handleUsernameTaken(UsernameTakenException ex,
+                                                                HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, "USERNAME_TAKEN", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ResetTokenInvalidException.class)
+    public ResponseEntity<ApiErrorResponse> handleResetTokenInvalid(ResetTokenInvalidException ex,
+                                                                    HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, "RESET_TOKEN_INVALID", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AuthValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handleAuthValidation(AuthValidationException ex,
+                                                                 HttpServletRequest request) {
+        return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleUserNotFound(UserNotFoundException ex,
+                                                               HttpServletRequest request) {
+        return error(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AccountDisabledException.class)
+    public ResponseEntity<ApiErrorResponse> handleAccountDisabled(AccountDisabledException ex,
+                                                                  HttpServletRequest request) {
+        return error(HttpStatus.FORBIDDEN, "ACCOUNT_DISABLED", ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

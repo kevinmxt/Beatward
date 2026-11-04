@@ -40,6 +40,44 @@ describe('auth routing', () => {
     expect(router.currentRoute.value.query.expired).toBeUndefined()
   })
 
+  it('lets anonymous users open the register and reset pages', async () => {
+    const router = createAppRouter(createMemoryHistory())
+
+    await router.push('/register')
+    await router.isReady()
+    expect(router.currentRoute.value.path).toBe('/register')
+
+    await router.push('/reset-password')
+    expect(router.currentRoute.value.path).toBe('/reset-password')
+  })
+
+  it('protects the getting-started page', async () => {
+    const router = createAppRouter(createMemoryHistory())
+
+    await router.push('/getting-started')
+    await router.isReady()
+
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/getting-started')
+  })
+
+  it('sends authenticated users away from the register and reset pages', async () => {
+    applySession({
+      authenticated: true,
+      username: 'user',
+      role: 'USER',
+      csrfToken: 'csrf-1',
+    })
+    const router = createAppRouter(createMemoryHistory())
+
+    await router.push('/register')
+    await router.isReady()
+    expect(router.currentRoute.value.path).toBe('/monitors')
+
+    await router.push('/reset-password')
+    expect(router.currentRoute.value.path).toBe('/monitors')
+  })
+
   it('protects settings and incident routes', async () => {
     const router = createAppRouter(createMemoryHistory())
 
