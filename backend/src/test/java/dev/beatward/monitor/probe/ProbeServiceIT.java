@@ -2,6 +2,7 @@ package dev.beatward.monitor.probe;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.CheckFailureType;
 import dev.beatward.monitor.MonitorDisabledException;
 import dev.beatward.monitor.MonitorEntity;
@@ -69,6 +70,9 @@ class ProbeServiceIT {
 
     @Autowired
     CheckResultRepository checkResultRepository;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @TestConfiguration(proxyBeanMethods = false)
     static class LoopbackDnsConfiguration {
@@ -361,6 +365,7 @@ class ProbeServiceIT {
                                             int connectTimeoutMs, int responseTimeoutMs) {
         Instant now = Instant.parse("2026-10-21T08:00:00Z");
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(ownerId());
         monitor.setName("probe test");
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl(targetUrl);
@@ -377,6 +382,10 @@ class ProbeServiceIT {
         monitor.setCreatedAt(now);
         monitor.setUpdatedAt(now);
         return monitorRepository.save(monitor);
+    }
+
+    private Long ownerId() {
+        return userRepository.findByUsername("test-admin").orElseThrow().getId();
     }
 
     private static void assertConfigUnchanged(MonitorEntity before, MonitorEntity after) {

@@ -46,21 +46,24 @@ public class IncidentQueryService {
     }
 
     @Transactional(readOnly = true)
-    public Map<Long, String> monitorNames(Collection<Long> monitorIds) {
-        return monitorRepository.findAllById(monitorIds).stream()
+    public Map<Long, String> monitorNames(Collection<Long> monitorIds, Long userId) {
+        if (monitorIds.isEmpty()) {
+            return Map.of();
+        }
+        return monitorRepository.findAllByIdInAndUserId(monitorIds, userId).stream()
                 .collect(Collectors.toMap(MonitorEntity::getId, MonitorEntity::getName));
     }
 
     @Transactional(readOnly = true)
-    public String monitorName(Long monitorId) {
-        return monitorRepository.findById(monitorId)
+    public String monitorName(Long monitorId, Long userId) {
+        return monitorRepository.findByIdAndUserId(monitorId, userId)
                 .map(MonitorEntity::getName)
                 .orElse(null);
     }
 
     @Transactional(readOnly = true)
-    public List<NotificationDeliveryEntity> recentDeliveries(Long incidentId) {
-        return notificationDeliveryRepository.findByIncidentIdOrderByIdDesc(
-                incidentId, PageRequest.of(0, 5));
+    public List<NotificationDeliveryEntity> recentDeliveries(Long incidentId, Long userId) {
+        return notificationDeliveryRepository.findRecentForUser(
+                incidentId, userId, PageRequest.of(0, 5));
     }
 }

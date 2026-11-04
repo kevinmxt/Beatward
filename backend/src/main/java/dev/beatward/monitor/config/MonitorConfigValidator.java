@@ -11,7 +11,8 @@ public class MonitorConfigValidator {
 
     static final int NAME_MAX_LENGTH = 100;
     static final int URL_MAX_LENGTH = 2048;
-    static final int INTERVAL_MIN_SECONDS = 10;
+    // The only supported deployment profile is managed hosting, whose HTTP floor is 60s.
+    static final int INTERVAL_MIN_SECONDS = 60;
     static final int INTERVAL_MAX_SECONDS = 86400;
     static final int HEARTBEAT_INTERVAL_MIN_SECONDS = 30;
     static final int HEARTBEAT_INTERVAL_MAX_SECONDS = 2592000;

@@ -2,6 +2,7 @@ package dev.beatward.monitor.probe;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.CheckFailureType;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
@@ -50,6 +51,9 @@ class ProbeSsrfIT {
 
     @Autowired
     CheckResultRepository checkResultRepository;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @BeforeAll
     static void startServer() throws IOException {
@@ -141,6 +145,7 @@ class ProbeSsrfIT {
     private MonitorEntity saveMonitor(String targetUrl) {
         Instant now = Instant.parse("2026-10-21T08:00:00Z");
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(userRepository.findByUsername("test-admin").orElseThrow().getId());
         monitor.setName("ssrf probe test");
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl(targetUrl);

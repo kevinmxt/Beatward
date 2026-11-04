@@ -29,7 +29,15 @@
 - 证据：`OwnershipIsolationIT`（用户列表/详情/历史/心跳令牌/Incident 隔离，管理员边界）、`DisabledAccountSchedulingIT`（HTTP/心跳 due 查询跳过禁用账号、心跳上报拒绝）、`NotificationFlowIT`（禁用账号跳过投递并标记失败）。
 - 本地 `./mvnw verify` 259 个测试通过，BUILD SUCCESS；最终 CI 链接在 #123 统一记录。
 
+## 4C-2c 归属隔离 contract
+
+- Flyway `V16__monitor_ownership_contract.sql` 将 `monitor.user_id` 收紧为 `NOT NULL`（如仍有空值则回填到最早创建的启用 `ADMIN`），并把 HTTP 探测间隔下限从 10 秒提高到 60 秒；已有低于 60 秒的 HTTP 配置在迁移中归一到 60 秒，HEARTBEAT 下限保持 30 秒。
+- 每账号最多 20 个 Monitor（HTTP + HEARTBEAT 合计）；创建时锁定 `app_user` 行再计数，并发创建不会超卖；超限返回 409 `QUOTA_EXCEEDED`，消息含当前用量与上限，并提示删除既有 Monitor。
+- 用户可见的 Incident 监控名称查询全部带归属条件；移除 `AccountActivity` 对空归属的兼容分支。
+- 证据：`MonitorOwnershipMigrationIT`（NOT NULL、HTTP 间隔归一、迁移后拒绝空归属与低于 60 秒的 HTTP 间隔）、`MonitorQuotaIT`（混合类型计数、按用户隔离、30 并发创建仅 20 个成功）、`MonitorApiIT`（409 错误与可操作消息）、`MonitorConfigValidatorTest`（60 秒边界）、`AccountActivityTest`（空归属与禁用账号判定）；同步更新 `MonitorRepositoryIT`、探测/清理/重启等测试的归属数据准备。
+- 本地 `./mvnw verify` 267 个测试通过，BUILD SUCCESS；前端 `npm test` 176 个测试通过，`npm run build` 成功。
+
 ## 待完成
 
-- 4C-2c/#119、4C-3/#120、4C-4/#121、4C-5/#122。
+- 4C-3/#120、4C-4/#121、4C-5/#122。
 - 最终 CI 链接、真实 PushPlus/息知/邮件告警证据与人工走查记录在 #123 补齐。

@@ -1,5 +1,6 @@
 package dev.beatward.monitor.probe;
 
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.monitor.CheckFailureType;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
@@ -44,6 +45,9 @@ class ProbeResolverUnavailableIT {
 
     @Autowired
     CheckResultRepository checkResultRepository;
+
+    @Autowired
+    AppUserRepository userRepository;
 
     @TestConfiguration(proxyBeanMethods = false)
     static class BusyDnsConfiguration {
@@ -92,6 +96,7 @@ class ProbeResolverUnavailableIT {
     private MonitorEntity saveMonitor() {
         Instant now = Instant.parse("2026-10-22T08:00:00Z");
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(userRepository.findByUsername("test-admin").orElseThrow().getId());
         monitor.setName("resolver unavailable test");
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl("http://unresolvable.test/health");

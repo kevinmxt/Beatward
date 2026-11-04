@@ -1,6 +1,8 @@
 package dev.beatward.auth;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,6 +14,13 @@ import java.util.Optional;
 public interface AppUserRepository extends JpaRepository<AppUserEntity, Long> {
 
     Optional<AppUserEntity> findByUsername(String username);
+
+    /**
+     * Serializes per-user writes that enforce quotas or other account-level invariants.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from AppUserEntity u where u.id = :id")
+    Optional<AppUserEntity> findByIdForUpdate(@Param("id") Long id);
 
     boolean existsByUsername(String username);
 

@@ -11,13 +11,9 @@ public class AccountActivity {
         this.userRepository = userRepository;
     }
 
-    /**
-     * Null owners exist only during the 4C-2a/4C-2b expand window; the 4C-2c
-     * migration makes monitor.user_id non-null.
-     */
     public boolean isActive(Long userId) {
         if (userId == null) {
-            return true;
+            return false;
         }
         return userRepository.findById(userId)
                 .map(user -> user.getStatus() == AccountStatus.ACTIVE)

@@ -10,9 +10,15 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * User-visible reads must use the *UserId variants. Unowned lookups are reserved
+ * for token-authenticated heartbeat paths and global scheduler scans, which filter
+ * by account status instead.
+ */
 public interface MonitorRepository extends JpaRepository<MonitorEntity, Long> {
 
     @Query("""
@@ -44,6 +50,10 @@ public interface MonitorRepository extends JpaRepository<MonitorEntity, Long> {
                                    Pageable pageable);
 
     Page<MonitorEntity> findByUserId(Long userId, Pageable pageable);
+
+    long countByUserId(Long userId);
+
+    List<MonitorEntity> findAllByIdInAndUserId(Collection<Long> ids, Long userId);
 
     Optional<MonitorEntity> findByIdAndUserId(Long id, Long userId);
 

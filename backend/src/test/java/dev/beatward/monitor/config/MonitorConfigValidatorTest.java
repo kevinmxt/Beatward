@@ -71,8 +71,15 @@ class MonitorConfigValidatorTest {
 
     @Test
     void rejectsOutOfRangeInterval() {
-        assertInvalid("intervalSeconds", inputWithInterval(9));
+        assertInvalid("intervalSeconds", inputWithInterval(59));
         assertInvalid("intervalSeconds", inputWithInterval(86401));
+    }
+
+    @Test
+    void acceptsSixtySecondIntervalFloor() {
+        MonitorConfig config = validator.validate(inputWithInterval(60));
+
+        assertThat(config.intervalSeconds()).isEqualTo(60);
     }
 
     @Test

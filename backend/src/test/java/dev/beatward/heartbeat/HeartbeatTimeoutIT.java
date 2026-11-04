@@ -413,7 +413,8 @@ class HeartbeatTimeoutIT {
     }
 
     private List<CheckResultEntity> checkResults(long monitorId) {
-        return checkResultRepository.findByMonitorId(monitorId, PageRequest.of(0, 20)).getContent();
+        return checkResultRepository.findByMonitorIdAndUserId(
+                monitorId, ownerId(), PageRequest.of(0, 20)).getContent();
     }
 
     private List<CheckResultEntity> timeoutResults(long monitorId) {

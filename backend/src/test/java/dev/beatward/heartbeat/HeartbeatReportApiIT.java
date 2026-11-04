@@ -327,7 +327,13 @@ class HeartbeatReportApiIT {
     }
 
     private List<CheckResultEntity> checkResults(long monitorId) {
-        return checkResultRepository.findByMonitorId(monitorId, PageRequest.of(0, 10)).getContent();
+        return checkResultRepository.findByMonitorIdAndUserId(
+                monitorId, adminId(), PageRequest.of(0, 10)).getContent();
+    }
+
+    private Long adminId() {
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM app_user WHERE username = 'test-admin'", Long.class);
     }
 
     private long activeCredentialCount(long monitorId) {

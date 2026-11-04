@@ -92,9 +92,10 @@ class CheckResultRepositoryIT {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    private static MonitorEntity newMonitor() {
+    private MonitorEntity newMonitor() {
         Instant now = Instant.parse("2026-10-21T08:00:00Z");
         MonitorEntity monitor = new MonitorEntity();
+        monitor.setUserId(adminId());
         monitor.setName("probe");
         monitor.setType(MonitorType.HTTP);
         monitor.setTargetUrl("http://8.8.8.8/health");
@@ -110,5 +111,10 @@ class CheckResultRepositoryIT {
         monitor.setCreatedAt(now);
         monitor.setUpdatedAt(now);
         return monitor;
+    }
+
+    private Long adminId() {
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM app_user WHERE username = 'test-admin'", Long.class);
     }
 }

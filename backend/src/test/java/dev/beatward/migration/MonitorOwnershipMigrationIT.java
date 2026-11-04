@@ -58,7 +58,7 @@ class MonitorOwnershipMigrationIT {
             DatabaseMetaData metadata = connection.getMetaData();
             try (ResultSet columns = metadata.getColumns(null, "public", "monitor", "user_id")) {
                 assertThat(columns.next()).isTrue();
-                assertThat(columns.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.columnNullable);
+                assertThat(columns.getInt("NULLABLE")).isEqualTo(DatabaseMetaData.columnNoNulls);
             }
         }
 
@@ -107,6 +107,53 @@ class MonitorOwnershipMigrationIT {
                      "SELECT user_id FROM monitor WHERE name = 'multi-admin-monitor'")) {
             assertThat(result.next()).isTrue();
             assertThat(result.getLong("user_id")).isEqualTo(expectedAdminId);
+        }
+    }
+
+    @Test
+    void raisesHttpIntervalFloorButKeepsHeartbeatFloor() throws Exception {
+        migrateTo("14");
+        try (Connection connection = open()) {
+            insertAdmin(connection, "legacy-admin", "ACTIVE");
+            insertMonitor(connection, "slow-http", "HTTP", 10);
+            insertMonitor(connection, "fast-heartbeat", "HEARTBEAT", 30);
+        }
+
+        migrateToLatest();
+
+        assertThat(intervalOf("slow-http")).isEqualTo(60);
+        assertThat(intervalOf("fast-heartbeat")).isEqualTo(30);
+    }
+
+    @Test
+    void rejectsUnownedMonitorsAfterMigration() {
+        migrateToLatest();
+
+        assertThatThrownBy(() -> insertMonitorWithoutOwner("unowned-after-migration"))
+                .isInstanceOf(java.sql.SQLException.class);
+    }
+
+    @Test
+    void rejectsHttpIntervalsBelowSixtyAfterMigration() {
+        migrateToLatest();
+
+        assertThatThrownBy(() -> {
+            try (Connection connection = open()) {
+                long adminId = insertAdmin(connection, "interval-admin", "ACTIVE");
+                insertMonitorForOwner(connection, adminId, "too-fast", "HTTP", 59);
+            }
+        }).isInstanceOf(java.sql.SQLException.class);
+    }
+
+    private static int intervalOf(String name) throws Exception {
+        try (Connection connection = open();
+             PreparedStatement statement = connection.prepareStatement(
+                     "SELECT interval_seconds FROM monitor WHERE name = ?")) {
+            statement.setString(1, name);
+            try (ResultSet result = statement.executeQuery()) {
+                assertThat(result.next()).isTrue();
+                return result.getInt("interval_seconds");
+            }
         }
     }
 
@@ -159,15 +206,76 @@ class MonitorOwnershipMigrationIT {
     }
 
     private static void insertMonitor(Connection connection, String name) throws Exception {
+        insertMonitor(connection, name, "HTTP", 60);
+    }
+
+    /**
+     * Inserts against the pre-contract schema (V14): user_id does not exist yet.
+     */
+    private static void insertMonitor(Connection connection, String name, String type,
+                                      int intervalSeconds) throws Exception {
         try (PreparedStatement statement = connection.prepareStatement("""
                 INSERT INTO monitor (name, type, target_url, method, interval_seconds,
                                      connect_timeout_ms, response_timeout_ms,
-                                     expected_status_min, expected_status_max, enabled,
+                                     expected_status_min, expected_status_max,
+                                     heartbeat_grace_seconds, enabled,
                                      current_status, next_check_at, created_at, updated_at)
-                VALUES (?, 'HTTP', 'https://example.com/health', 'GET', 60,
-                        3000, 10000, 200, 299, true,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true,
                         'UNKNOWN', NOW(), NOW(), NOW())
                 """)) {
+            statement.setString(1, name);
+            statement.setString(2, type);
+            boolean http = "HTTP".equals(type);
+            statement.setString(3, http ? "https://example.com/health" : null);
+            statement.setString(4, http ? "GET" : null);
+            statement.setInt(5, intervalSeconds);
+            statement.setObject(6, http ? 3000 : null);
+            statement.setObject(7, http ? 10000 : null);
+            statement.setObject(8, http ? 200 : null);
+            statement.setObject(9, http ? 299 : null);
+            statement.setObject(10, http ? null : 60);
+            statement.executeUpdate();
+        }
+    }
+
+    private static void insertMonitorForOwner(Connection connection, long userId, String name,
+                                              String type, int intervalSeconds) throws Exception {
+        try (PreparedStatement statement = connection.prepareStatement("""
+                INSERT INTO monitor (user_id, name, type, target_url, method, interval_seconds,
+                                     connect_timeout_ms, response_timeout_ms,
+                                     expected_status_min, expected_status_max,
+                                     heartbeat_grace_seconds, enabled,
+                                     current_status, next_check_at, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, true,
+                        'UNKNOWN', NOW(), NOW(), NOW())
+                """)) {
+            statement.setLong(1, userId);
+            statement.setString(2, name);
+            statement.setString(3, type);
+            boolean http = "HTTP".equals(type);
+            statement.setString(4, http ? "https://example.com/health" : null);
+            statement.setString(5, http ? "GET" : null);
+            statement.setInt(6, intervalSeconds);
+            statement.setObject(7, http ? 3000 : null);
+            statement.setObject(8, http ? 10000 : null);
+            statement.setObject(9, http ? 200 : null);
+            statement.setObject(10, http ? 299 : null);
+            statement.setObject(11, http ? null : 60);
+            statement.executeUpdate();
+        }
+    }
+
+    private static void insertMonitorWithoutOwner(String name) throws Exception {
+        try (Connection connection = open();
+             PreparedStatement statement = connection.prepareStatement("""
+                     INSERT INTO monitor (name, type, target_url, method, interval_seconds,
+                                          connect_timeout_ms, response_timeout_ms,
+                                          expected_status_min, expected_status_max, enabled,
+                                          current_status, next_check_at, created_at, updated_at)
+                     VALUES (?, 'HTTP', 'https://example.com/health', 'GET', 60,
+                             3000, 10000, 200, 299, true,
+                             'UNKNOWN', NOW(), NOW(), NOW())
+                     """)) {
             statement.setString(1, name);
             statement.executeUpdate();
         }

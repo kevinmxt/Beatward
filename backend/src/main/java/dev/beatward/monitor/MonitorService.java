@@ -1,5 +1,6 @@
 package dev.beatward.monitor;
 
+import dev.beatward.auth.AppUserRepository;
 import dev.beatward.common.PageQueries;
 import dev.beatward.heartbeat.HeartbeatCredentialEntity;
 import dev.beatward.heartbeat.HeartbeatCredentialRepository;
@@ -31,7 +32,10 @@ import java.util.stream.Collectors;
 @Service
 public class MonitorService {
 
+    static final int MAX_MONITORS_PER_USER = 20;
+
     private final MonitorRepository repository;
+    private final AppUserRepository userRepository;
     private final MonitorConfigValidator configValidator;
     private final TargetPolicy targetPolicy;
     private final IncidentService incidentService;
@@ -40,12 +44,14 @@ public class MonitorService {
     private final CheckResultRepository checkResultRepository;
     private final Clock clock;
 
-    public MonitorService(MonitorRepository repository, MonitorConfigValidator configValidator,
+    public MonitorService(MonitorRepository repository, AppUserRepository userRepository,
+                          MonitorConfigValidator configValidator,
                           TargetPolicy targetPolicy, IncidentService incidentService,
                           HeartbeatCredentialRepository heartbeatCredentialRepository,
                           HeartbeatTokenGenerator heartbeatTokenGenerator,
                           CheckResultRepository checkResultRepository, Clock clock) {
         this.repository = repository;
+        this.userRepository = userRepository;
         this.configValidator = configValidator;
         this.targetPolicy = targetPolicy;
         this.incidentService = incidentService;
@@ -69,6 +75,7 @@ public class MonitorService {
     private MonitorEntity createHttp(MonitorConfigInput input, Long userId) {
         MonitorConfig config = configValidator.validate(input);
         validateTarget(config.targetUrl());
+        checkQuota(userId);
 
         Instant now = clock.instant();
         MonitorEntity monitor = new MonitorEntity();
@@ -84,6 +91,7 @@ public class MonitorService {
 
     private MonitorCreationResult createHeartbeat(MonitorConfigInput input, Long userId) {
         HeartbeatConfig config = configValidator.validateHeartbeat(input);
+        checkQuota(userId);
 
         Instant now = clock.instant();
         MonitorEntity monitor = new MonitorEntity();
@@ -131,18 +139,18 @@ public class MonitorService {
     }
 
     @Transactional(readOnly = true)
-    public Map<Long, Long> latestCheckDurations(Collection<Long> monitorIds) {
+    public Map<Long, Long> latestCheckDurations(Collection<Long> monitorIds, Long userId) {
         if (monitorIds.isEmpty()) {
             return Map.of();
         }
-        return checkResultRepository.findLatestDurations(monitorIds).stream()
+        return checkResultRepository.findLatestDurations(monitorIds, userId).stream()
                 .collect(Collectors.toMap(CheckResultRepository.LatestCheckDuration::getMonitorId,
                         CheckResultRepository.LatestCheckDuration::getDurationMs));
     }
 
     @Transactional(readOnly = true)
-    public Long latestCheckDuration(Long monitorId) {
-        return latestCheckDurations(List.of(monitorId)).get(monitorId);
+    public Long latestCheckDuration(Long monitorId, Long userId) {
+        return latestCheckDurations(List.of(monitorId), userId).get(monitorId);
     }
 
     /**
@@ -244,6 +252,19 @@ public class MonitorService {
     public void deleteForUser(Long id, Long userId) {
         MonitorEntity monitor = getForUser(id, userId);
         repository.delete(monitor);
+    }
+
+    /**
+     * Locks the owner row so concurrent creates cannot both observe the same
+     * remaining quota and oversell it.
+     */
+    private void checkQuota(Long userId) {
+        userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new IllegalArgumentException("user not found: " + userId));
+        long current = repository.countByUserId(userId);
+        if (current >= MAX_MONITORS_PER_USER) {
+            throw new QuotaExceededException(current, MAX_MONITORS_PER_USER);
+        }
     }
 
     private void validateTarget(URI target) {
