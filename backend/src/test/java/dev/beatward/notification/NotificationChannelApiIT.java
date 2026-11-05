@@ -54,7 +54,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(properties = {
         "beatward.notification.scheduling-enabled=false",
-        "beatward.channel-secret-key=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+        "beatward.channel-secret-key=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+        "beatward.smtp.host=",
+        "beatward.smtp.username=",
+        "beatward.smtp.password=",
+        "beatward.smtp.from="
 })
 @AutoConfigureMockMvc
 @Testcontainers

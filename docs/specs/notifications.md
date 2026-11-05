@@ -87,6 +87,8 @@ PushPlus 与息知端点内置；`beatward.notification.endpoints.*` 只用于�
 - legacy Telegram 回归：`NotificationFlowIT`。
 - 前端渠道页、角色导航与错误提示：`NotificationSettingsView.test.ts`、`GettingStartedView.test.ts`、`router/index.test.ts`。
 - 真实 PushPlus 测试通知与 Incident 告警：`RealPushPlusNotificationIT`（需要 `BEATWARD_TEST_PUSHPLUS_TOKEN` 且 `BEATWARD_RUN_REAL_NOTIFICATIONS=true`，CI 中跳过）。
+- 真实息知测试通知：`RealXizhiNotificationIT`（需要 `BEATWARD_TEST_XIZHI_KEY` 与显式 opt-in）。
+- 真实邮件测试通知：`RealEmailNotificationIT`（需要 `BEATWARD_TEST_EMAIL_TO`、全局 SMTP 与显式 opt-in）。
 
 ## 非目标
 
