@@ -24,6 +24,11 @@
 | GET | `/api/v1/admin/users` | 管理员分页查询账号元数据与监控数量 |
 | PATCH | `/api/v1/admin/users/{id}/status` | 管理员启用或禁用账号 |
 | POST | `/api/v1/admin/users/{id}/reset-code` | 管理员为用户生成一次性重置码（明文只返回一次） |
+| GET | `/api/v1/notification-channels` | 查询当前用户的通知渠道（凭据掩码） |
+| POST | `/api/v1/notification-channels` | 创建 PushPlus、息知或邮件渠道 |
+| PUT | `/api/v1/notification-channels/{id}` | 修改名称、启用状态或轮换凭据 |
+| DELETE | `/api/v1/notification-channels/{id}` | 删除通知渠道 |
+| POST | `/api/v1/notification-channels/{id}/test` | 发送测试通知，不创建 Incident |
 | GET | `/api/v1/monitors` | 查询监控项 |
 | POST | `/api/v1/monitors` | 创建监控项 |
 | GET | `/api/v1/monitors/{id}` | 查询监控详情 |
@@ -40,7 +45,7 @@
 
 路径可随实现调整，但必须维护一致的 API 文档和测试。
 
-错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。Phase 4C-2c 新增 `QUOTA_EXCEEDED`（409）。Phase 4C-3 新增 `INVITE_NOT_FOUND`（404）与 `LAST_ACTIVE_ADMIN`（409）。
+错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。Phase 4C-2c 新增 `QUOTA_EXCEEDED`（409）。Phase 4C-3 新增 `INVITE_NOT_FOUND`（404）与 `LAST_ACTIVE_ADMIN`（409）；Phase 4C-4 新增 `CHANNEL_NOT_FOUND`（404）与 `CHANNEL_LIMIT_EXCEEDED`（409）。
 
 ### 管理端接口
 
@@ -79,6 +84,16 @@ Monitor 的请求与响应包含 `failureThreshold` 与 `recoveryThreshold`（�
 - `POST /api/v1/monitors/{id}/heartbeat-token`：轮换令牌，返回 200 与仅此一次可见的 `heartbeatToken`；旧令牌立即失效；禁用状态仍允许。非心跳类型返回 400 `NOT_HEARTBEAT_MONITOR`；监控项不存在返回 404 `MONITOR_NOT_FOUND`。
 - `DELETE /api/v1/monitors/{id}/heartbeat-token`：撤销令牌，幂等返回 204；禁用状态仍允许；之后上报返回 404。
 - 防护规则的参数与信任边界见 [`heartbeat.md`](heartbeat.md#上报接口)；超限分别返回 429 `RATE_LIMITED`（带 `Retry-After`）、413 `PAYLOAD_TOO_LARGE`、400 `HTTPS_REQUIRED`。
+
+### 通知渠道
+
+- `GET /api/v1/notification-channels?page&size` 返回当前用户的渠道分页；条目包含 `id`、`type`、`name`、`enabled`、`maskedConfig`、`lastTestAt`、`lastTestStatus`、`lastTestError`、`createdAt`、`updatedAt`，不返回明文凭据。
+- `POST /api/v1/notification-channels` 请求 `{type, name, enabled?, config}`；`type` 为 `PUSHPLUS`、`XIZHI` 或 `EMAIL`，`config` 分别为 `{token}`、`{key}`、`{email}`。成功 201。
+- `PUT /api/v1/notification-channels/{id}` 请求 `{name, enabled?, config?}`；`config` 省略或为空表示保留原凭据。
+- `DELETE /api/v1/notification-channels/{id}` 返回 204；删除后待发送投递行按渠道不存在跳过。
+- `POST /api/v1/notification-channels/{id}/test` 同步发送测试通知，成功返回 200 `{status: SUCCESS|FAILED, message, testedAt}`；发送失败也返回 200 并记录 `lastTestError`；限频返回 429 `RATE_LIMITED`。
+- 每用户最多 3 个启用渠道；超限返回 409 `CHANNEL_LIMIT_EXCEEDED`。未知渠道返回 404 `CHANNEL_NOT_FOUND`。每用户每渠道限频 10 条/分钟、50 条/小时；测试发送与真实投递共用该限频桶。
+- 同一 Incident 事件的每个启用渠道各生成一条投递行；单渠道失败不影响其他渠道；Incident 详情的投递项包含 `channelId`、`channelName`、类型、状态、尝试次数与错误摘要。
 
 ## 分页约定
 

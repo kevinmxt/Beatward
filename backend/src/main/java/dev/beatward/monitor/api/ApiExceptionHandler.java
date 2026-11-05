@@ -26,6 +26,9 @@ import dev.beatward.monitor.MonitorNotFoundException;
 import dev.beatward.monitor.QuotaExceededException;
 import dev.beatward.monitor.config.InvalidMonitorConfigException;
 import dev.beatward.monitor.target.BlockedTargetException;
+import dev.beatward.notification.ChannelLimitExceededException;
+import dev.beatward.notification.ChannelNotFoundException;
+import dev.beatward.notification.NotificationRateLimitedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +64,24 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleQuotaExceeded(QuotaExceededException ex,
                                                                 HttpServletRequest request) {
         return error(HttpStatus.CONFLICT, "QUOTA_EXCEEDED", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ChannelLimitExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleChannelLimit(ChannelLimitExceededException ex,
+                                                               HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "CHANNEL_LIMIT_EXCEEDED", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ChannelNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleChannelNotFound(ChannelNotFoundException ex,
+                                                                  HttpServletRequest request) {
+        return error(HttpStatus.NOT_FOUND, "CHANNEL_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(NotificationRateLimitedException.class)
+    public ResponseEntity<ApiErrorResponse> handleNotificationRateLimited(
+            NotificationRateLimitedException ex, HttpServletRequest request) {
+        return rateLimited(ex.getRetryAfterSeconds(), ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidMonitorConfigException.class)

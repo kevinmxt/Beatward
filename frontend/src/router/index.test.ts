@@ -85,9 +85,28 @@ describe('auth routing', () => {
     await router.isReady()
     expect(router.currentRoute.value.path).toBe('/login')
 
+    await router.push('/settings/notifications')
+    expect(router.currentRoute.value.path).toBe('/login')
+    expect(router.currentRoute.value.query.redirect).toBe('/settings/notifications')
+
     await router.push('/incidents')
     expect(router.currentRoute.value.path).toBe('/login')
     expect(router.currentRoute.value.query.redirect).toBe('/incidents')
+  })
+
+  it('lets authenticated users open notification settings', async () => {
+    applySession({
+      authenticated: true,
+      username: 'user',
+      role: 'USER',
+      csrfToken: 'csrf-1',
+    })
+    const router = createAppRouter(createMemoryHistory())
+
+    await router.push('/settings/notifications')
+    await router.isReady()
+
+    expect(router.currentRoute.value.path).toBe('/settings/notifications')
   })
 
   it('lets authenticated users into management routes', async () => {

@@ -246,7 +246,9 @@ onMounted(() => {
                   </thead>
                   <tbody>
                     <tr v-for="delivery in deliveries" :key="delivery.id">
-                      <td :title="delivery.channel">{{ deliveryChannelLabel(delivery.channel) }}</td>
+                      <td :title="deliveryChannelLabel(delivery.channel)">
+                        {{ delivery.channelName ?? deliveryChannelLabel(delivery.channel) }}
+                      </td>
                       <td class="mono" :title="delivery.eventType">
                         {{ deliveryEventLabel(delivery.eventType) }}
                       </td>

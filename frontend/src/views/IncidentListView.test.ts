@@ -42,7 +42,9 @@ function incident(id: number, overrides: Partial<Incident> = {}): Incident {
 function delivery(id: number, overrides: Partial<NotificationDelivery> = {}): NotificationDelivery {
   return {
     id,
+    channelId: null,
     channel: 'TELEGRAM',
+    channelName: null,
     eventType: 'INCIDENT_OPENED',
     status: 'PENDING',
     attemptCount: 1,

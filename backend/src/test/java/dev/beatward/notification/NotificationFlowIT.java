@@ -591,7 +591,7 @@ class NotificationFlowIT {
         user.setUsername("notify-owner-" + java.util.UUID.randomUUID().toString().substring(0, 8));
         user.setPasswordHash(
                 "{bcrypt}$2a$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234");
-        user.setRole(dev.beatward.auth.AppRole.USER);
+        user.setRole(dev.beatward.auth.AppRole.ADMIN);
         user.setStatus(AccountStatus.ACTIVE);
         user.setCreatedAt(CLOCK.instant());
         user.setUpdatedAt(CLOCK.instant());

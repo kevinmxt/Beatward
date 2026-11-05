@@ -102,6 +102,15 @@ Maven 由 Maven Wrapper 提供，无需单独安装。
 | `BEATWARD_TELEGRAM_BOT_TOKEN` | 空（通知关闭） | Telegram Bot Token；必须与 Chat ID 同时配置 |
 | `BEATWARD_TELEGRAM_CHAT_ID` | 空（通知关闭） | Telegram Chat ID |
 | `BEATWARD_TELEGRAM_API_BASE_URL` | `https://api.telegram.org` | Telegram API 基地址，仅用于测试或代理 |
+| `BEATWARD_CHANNEL_SECRET_KEY` | 空 | 用户通知渠道凭据的 AES-256-GCM 密钥（Base64 32 字节）；存在渠道数据时必填 |
+| `BEATWARD_PUBLIC_BASE_URL` | 空 | 通知详情链接使用的公网基地址 |
+| `BEATWARD_SMTP_HOST` | 空（邮件关闭） | EMAIL 渠道的全局 SMTP 主机 |
+| `BEATWARD_SMTP_PORT` | `587` | SMTP 端口 |
+| `BEATWARD_SMTP_USERNAME` | 空 | SMTP 用户名 |
+| `BEATWARD_SMTP_PASSWORD` | 空 | SMTP 密码或授权码 |
+| `BEATWARD_SMTP_FROM` | 空 | 发信地址；与 Host 同时配置才启用邮件 |
+| `BEATWARD_SMTP_STARTTLS` | `true` | 是否启用 STARTTLS |
+| `BEATWARD_SMTP_SSL` | `false` | 是否启用 SMTP over SSL |
 | `HEARTBEAT_REQUIRE_HTTPS` | `false` | 心跳上报是否要求 HTTPS；可信代理、客户端地址与 HTTPS 判定规则见 [`docs/specs/auth.md`](docs/specs/auth.md#可信代理与客户端地址) |
 
 数据库结构变更一律通过 `backend/src/main/resources/db/migration/` 下的 Flyway 迁移完成，不使用 Hibernate 自动建表。

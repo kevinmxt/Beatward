@@ -47,7 +47,18 @@
 - 证据：`AdminConsoleApiIT` 12 个用例（列表字段脱敏、撤销幂等、监控数量、禁用即失效会话、未认证 401、`USER` 越权 403、多管理员与并发禁用保护、状态校验、审计日志）；`AdminInvitesView.test.ts`、`AdminUsersView.test.ts`、`router/index.test.ts`、`App.test.ts`（管理页渲染与操作、角色导航与路由拒绝）。
 - 本地 `./mvnw verify` 279 个测试通过，BUILD SUCCESS；前端 `npm test` 189 个测试通过，`npm run build` 成功。
 
+## 4C-4 用户级通知渠道与投递
+
+- Flyway `V17__notification_channels.sql` 新增 `notification_channel`（AES-256-GCM 密文凭据、启用状态、最近测试结果），并为 `notification_delivery` 增加 `notification_channel_id` 与按渠道维度的部分唯一索引；旧 Telegram 行按 `(incident_id, event_type, channel)` 保持唯一。
+- 新增渠道 CRUD、启用/禁用、删除与测试发送 API；每用户最多 3 个启用渠道，超限返回 409 `CHANNEL_LIMIT_EXCEEDED`；API 只返回掩码。
+- PushPlus、息知使用固定官方端点；邮件使用全局 SMTP；测试发送不创建 Incident。
+- Incident 入队时展开用户所有启用渠道，单渠道失败不影响其他渠道；渠道删除/禁用后待发送投递安全跳过；每用户每渠道 10 条/分钟、50 条/小时，超限标记失败并记录 WARN。
+- 前端新增 `/settings/notifications`，支持添加/编辑/启停/测试/删除渠道；Incident 投递记录展示渠道名称。
+- 证据：`NotificationChannelApiIT`（CRUD、掩码、配额与并发创建、测试发送、跨用户 404、未认证 401、CSRF、限频、无 SMTP 失败）、`MultiChannelNotificationIT`（多渠道展开、单渠道失败隔离、删除渠道与同类型多渠道安全跳过、限频、用户隔离）、`NotificationFlowIT`（legacy Telegram 回归）、`ChannelSecretStartupValidatorTest`、`ChannelSecretCipherTest`、`ChannelConfigValidatorTest`、`NotificationRateLimiterTest`、`EmailNotificationSenderTest`；前端 `NotificationSettingsView.test.ts`、路由与 Incident 展示测试。
+- 本地 `./mvnw verify`：298 个测试通过，1 个跳过（`RealPushPlusNotificationIT` 需要 `BEATWARD_TEST_PUSHPLUS_TOKEN`），BUILD SUCCESS；前端 `npm test` 197 个测试通过，`npm run build` 成功。
+- 真实 PushPlus/息知/邮件通知证据待设置凭据后补录。
+
 ## 待完成
 
-- 4C-4/#121、4C-5/#122。
-- 最终 CI 链接、真实 PushPlus/息知/邮件告警证据与人工走查记录在 #123 补齐。
+- 4C-5/#122。
+- 真实 PushPlus/息知/邮件告警证据、最终 CI 链接与人工走查记录在 #123 补齐。

@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class NotificationMessageFormatterTest {
 
     private static final Instant STARTED_AT = Instant.parse("2026-10-21T08:00:00Z");
-    private final NotificationMessageFormatter formatter = new NotificationMessageFormatter();
+    private final NotificationMessageFormatter formatter =
+            new NotificationMessageFormatter(new NotificationChannelProperties(null, null));
 
     @Test
     void formatsOpenedMessageWithMonitorFailureAndTime() {

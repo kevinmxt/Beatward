@@ -275,6 +275,15 @@ sudo ./scripts/restore.sh /tmp/backup.dump beatward_restore
 
 4B 本地演练证据见 [`phase4b-acceptance.md`](phase4b-acceptance.md)；5A 异地加密副本恢复证据见 [`phase5a-acceptance.md`](phase5a-acceptance.md)。仅确认备份文件存在，不代表恢复能力已验证。
 
+## 通知渠道与 SMTP
+
+- 用户通知渠道凭据由 `BEATWARD_CHANNEL_SECRET_KEY`（Base64 32 字节）加密；生成方式 `openssl rand -base64 32`。
+- 一旦存在 `notification_channel` 数据，缺失密钥时应用拒绝启动；密钥必须与数据库备份分开离线备份，丢失后用户需重新绑定渠道。
+- `BEATWARD_PUBLIC_BASE_URL` 用于通知详情链接，应设置为用户可访问的 HTTPS 地址。
+- EMAIL 渠道使用全局 SMTP：`BEATWARD_SMTP_HOST`、`PORT`、`USERNAME`、`PASSWORD`、`FROM`、`STARTTLS`、`SSL`。优先使用 465/587 端口，避免依赖 25 端口。
+- 发信域名需配置 SPF/DKIM；邮件仅作为兜底通道，不承诺单一通道 SLA。
+- PushPlus 与息知使用内置官方端点，不接受用户自定义 URL；出站需允许 HTTPS 访问对应域名。
+
 ## 发布与回滚
 
 部署与回滚脚本在 VM/VPS 内以 root 运行，读取 `/etc/beatward/beatward.env`（600）。
