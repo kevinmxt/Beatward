@@ -19,6 +19,10 @@
 | POST | `/api/v1/auth/register` | 使用邀请码注册并自动登录 |
 | POST | `/api/v1/auth/reset-password` | 使用一次性重置码设置新密码 |
 | POST | `/api/v1/admin/invite-codes` | 管理员创建邀请码（明文只返回一次） |
+| GET | `/api/v1/admin/invite-codes` | 管理员分页查询邀请码元数据（不含明文或哈希） |
+| POST | `/api/v1/admin/invite-codes/{id}/revoke` | 管理员撤销邀请码（幂等） |
+| GET | `/api/v1/admin/users` | 管理员分页查询账号元数据与监控数量 |
+| PATCH | `/api/v1/admin/users/{id}/status` | 管理员启用或禁用账号 |
 | POST | `/api/v1/admin/users/{id}/reset-code` | 管理员为用户生成一次性重置码（明文只返回一次） |
 | GET | `/api/v1/monitors` | 查询监控项 |
 | POST | `/api/v1/monitors` | 创建监控项 |
@@ -36,7 +40,15 @@
 
 路径可随实现调整，但必须维护一致的 API 文档和测试。
 
-错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。Phase 4C-2c 新增 `QUOTA_EXCEEDED`（409）。
+错误信封统一为 `{code, message, traceId}`。Phase 4C-1 新增错误码：`INVITE_INVALID`、`INVITE_EXPIRED`、`INVITE_REVOKED`、`INVITE_EXHAUSTED`、`USERNAME_TAKEN`、`RESET_TOKEN_INVALID`、`ACCOUNT_DISABLED`、`USER_NOT_FOUND`；详细语义见 [`auth.md`](auth.md)。Phase 4C-2c 新增 `QUOTA_EXCEEDED`（409）。Phase 4C-3 新增 `INVITE_NOT_FOUND`（404）与 `LAST_ACTIVE_ADMIN`（409）。
+
+### 管理端接口
+
+- `GET /api/v1/admin/invite-codes?page&size` 返回 `{items, page, size, totalElements}`；条目包含 `id`、`label`、`maxUses`、`usedCount`、`expiresAt`、`revokedAt`、`createdAt`，不返回明文或哈希。
+- `POST /api/v1/admin/invite-codes/{id}/revoke` 返回 204；重复撤销幂等；不存在返回 404 `INVITE_NOT_FOUND`。
+- `GET /api/v1/admin/users?page&size` 返回账号 `id`、`username`、`role`、`status`、`disabledAt`、`lastLoginAt`、`createdAt` 与 `monitorCount`；不返回监控名称、目标 URL、历史或其他监控内容。
+- `PATCH /api/v1/admin/users/{id}/status` 请求 `{status: "ACTIVE"|"DISABLED"}`，成功 200 并返回该账号元数据。禁用会立即失效目标账号全部会话；不能禁用最后一个启用 `ADMIN`，否则返回 409 `LAST_ACTIVE_ADMIN`；非法状态返回 400 `VALIDATION_ERROR`；账号不存在返回 404 `USER_NOT_FOUND`。
+- `POST /api/v1/admin/users/{id}/reset-code` 返回一次性明文与 `expiresAt`，不落库；账号不存在返回 404 `USER_NOT_FOUND`。
 
 ## 认证与访问边界
 

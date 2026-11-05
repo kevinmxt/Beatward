@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 public interface AppUserRepository extends JpaRepository<AppUserEntity, Long> {
@@ -21,6 +22,19 @@ public interface AppUserRepository extends JpaRepository<AppUserEntity, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from AppUserEntity u where u.id = :id")
     Optional<AppUserEntity> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * Locks every active administrator so concurrent status changes cannot remove the
+     * last one. Call before locking an individual user to keep lock ordering stable.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            select u from AppUserEntity u
+            where u.role = dev.beatward.auth.AppRole.ADMIN
+              and u.status = dev.beatward.auth.AccountStatus.ACTIVE
+            order by u.id
+            """)
+    List<AppUserEntity> lockActiveAdmins();
 
     boolean existsByUsername(String username);
 

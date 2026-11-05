@@ -1,15 +1,21 @@
 import type {
+  AccountStatus,
+  AdminUser,
   CheckResult,
   HeartbeatTokenResponse,
   Incident,
   IncidentDetail,
   IncidentQuery,
+  InviteCode,
+  InviteCodeCreateInput,
+  InviteCodeCreateResponse,
   LoginResponse,
   Monitor,
   MonitorInput,
   PageResponse,
   PasswordChangeInput,
   RegisterInput,
+  ResetCodeResponse,
   ResetPasswordInput,
   SessionInfo,
 } from './types'
@@ -283,7 +289,7 @@ export function deleteMonitor(id: number): Promise<void> {
   return request<void>(`/api/v1/monitors/${id}`, { method: 'DELETE' })
 }
 
-function jsonRequest<T>(path: string, method: 'POST' | 'PUT', body: unknown): Promise<T> {
+function jsonRequest<T>(path: string, method: 'POST' | 'PUT' | 'PATCH', body: unknown): Promise<T> {
   return request<T>(path, {
     method,
     headers: { 'Content-Type': 'application/json' },
@@ -327,6 +333,42 @@ export function listIncidents(query: IncidentQuery = {}): Promise<PageResponse<I
 
 export function getIncident(id: number): Promise<IncidentDetail> {
   return request<IncidentDetail>(`/api/v1/incidents/${id}`, { method: 'GET' })
+}
+
+export function listInviteCodes(
+  page = 0,
+  size = 20,
+): Promise<PageResponse<InviteCode>> {
+  return request<PageResponse<InviteCode>>(
+    `/api/v1/admin/invite-codes?page=${page}&size=${size}`,
+    { method: 'GET' },
+  )
+}
+
+export function createInviteCode(
+  input: InviteCodeCreateInput,
+): Promise<InviteCodeCreateResponse> {
+  return jsonRequest<InviteCodeCreateResponse>('/api/v1/admin/invite-codes', 'POST', input)
+}
+
+export function revokeInviteCode(id: number): Promise<void> {
+  return request<void>(`/api/v1/admin/invite-codes/${id}/revoke`, { method: 'POST' })
+}
+
+export function listUsers(page = 0, size = 20): Promise<PageResponse<AdminUser>> {
+  return request<PageResponse<AdminUser>>(`/api/v1/admin/users?page=${page}&size=${size}`, {
+    method: 'GET',
+  })
+}
+
+export function updateUserStatus(id: number, status: AccountStatus): Promise<AdminUser> {
+  return jsonRequest<AdminUser>(`/api/v1/admin/users/${id}/status`, 'PATCH', { status })
+}
+
+export function generateResetCode(id: number): Promise<ResetCodeResponse> {
+  return request<ResetCodeResponse>(`/api/v1/admin/users/${id}/reset-code`, {
+    method: 'POST',
+  })
 }
 
 export function rotateHeartbeatToken(id: number): Promise<HeartbeatTokenResponse> {

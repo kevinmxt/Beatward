@@ -121,6 +121,40 @@ describe('auth routing', () => {
     expect(router.currentRoute.value.path).toBe('/monitors')
   })
 
+  it('blocks USER accounts from admin routes', async () => {
+    applySession({
+      authenticated: true,
+      username: 'user',
+      role: 'USER',
+      csrfToken: 'csrf-1',
+    })
+    const router = createAppRouter(createMemoryHistory())
+
+    await router.push('/admin/users')
+    await router.isReady()
+    expect(router.currentRoute.value.path).toBe('/monitors')
+
+    await router.push('/admin/invites')
+    expect(router.currentRoute.value.path).toBe('/monitors')
+  })
+
+  it('lets ADMIN accounts open admin routes', async () => {
+    applySession({
+      authenticated: true,
+      username: 'admin',
+      role: 'ADMIN',
+      csrfToken: 'csrf-1',
+    })
+    const router = createAppRouter(createMemoryHistory())
+
+    await router.push('/admin/invites')
+    await router.isReady()
+    expect(router.currentRoute.value.path).toBe('/admin/invites')
+
+    await router.push('/admin/users')
+    expect(router.currentRoute.value.path).toBe('/admin/users')
+  })
+
   it('clears auth and redirects with expired=1 when a request is unauthorized', async () => {
     applySession({
       authenticated: true,

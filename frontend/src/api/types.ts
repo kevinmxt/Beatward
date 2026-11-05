@@ -8,6 +8,50 @@ export type IncidentStatus = 'OPEN' | 'RESOLVED'
 
 export type NotificationDeliveryStatus = 'PENDING' | 'SENT' | 'FAILED'
 
+export type AppRole = 'ADMIN' | 'USER'
+
+export type AccountStatus = 'ACTIVE' | 'DISABLED'
+
+export interface InviteCode {
+  id: number
+  label: string | null
+  maxUses: number
+  usedCount: number
+  expiresAt: string
+  revokedAt: string | null
+  createdAt: string
+}
+
+export interface InviteCodeCreateInput {
+  label?: string | null
+  maxUses?: number | null
+  expiresInHours?: number | null
+}
+
+export interface InviteCodeCreateResponse {
+  id: number
+  code: string
+  label: string | null
+  maxUses: number
+  expiresAt: string
+}
+
+export interface AdminUser {
+  id: number
+  username: string
+  role: AppRole
+  status: AccountStatus
+  disabledAt: string | null
+  lastLoginAt: string | null
+  createdAt: string
+  monitorCount: number
+}
+
+export interface ResetCodeResponse {
+  code: string
+  expiresAt: string
+}
+
 export interface PageResponse<T> {
   items: T[]
   page: number

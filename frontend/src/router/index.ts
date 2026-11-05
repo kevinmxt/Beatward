@@ -6,6 +6,8 @@ import {
 } from 'vue-router'
 import { setUnauthorizedHandler } from '../api/client'
 import { authState, clearAuth, ensureSession } from '../auth/session'
+import AdminInvitesView from '../views/AdminInvitesView.vue'
+import AdminUsersView from '../views/AdminUsersView.vue'
 import GettingStartedView from '../views/GettingStartedView.vue'
 import IncidentListView from '../views/IncidentListView.vue'
 import LoginView from '../views/LoginView.vue'
@@ -21,6 +23,7 @@ import SettingsView from '../views/SettingsView.vue'
 declare module 'vue-router' {
   interface RouteMeta {
     requiresAuth?: boolean
+    requiresAdmin?: boolean
     publicOnly?: boolean
   }
 }
@@ -69,6 +72,18 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+  {
+    path: '/admin/invites',
+    name: 'admin-invites',
+    component: AdminInvitesView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
+  {
+    path: '/admin/users',
+    name: 'admin-users',
+    component: AdminUsersView,
+    meta: { requiresAuth: true, requiresAdmin: true },
+  },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ]
 
@@ -84,6 +99,9 @@ export function createAppRouter(
     }
     if (to.meta.requiresAuth && !authState.authenticated) {
       return { path: '/login', query: { redirect: to.fullPath } }
+    }
+    if (to.meta.requiresAdmin && authState.role !== 'ADMIN') {
+      return { path: '/monitors' }
     }
     return true
   })

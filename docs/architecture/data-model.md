@@ -96,6 +96,8 @@ Phase 2 的计数与阈值在探测写回事务内更新；探测语义配置变
 
 首次启动时如果表为空，应用使用 `BEATWARD_AUTH_BOOTSTRAP_USERNAME` 与 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 创建唯一管理员；变量缺失、用户名或哈希非法时拒绝启动。表非空时忽略引导变量并记录 WARN，不覆盖已有账号。自助注册只能创建 `USER`。认证与启动校验行为见 [`specs/auth.md`](../specs/auth.md)。
 
+管理员用户列表只读取账号元数据，并按 `monitor.user_id` 聚合监控数量；同一查询不读取 Monitor 名称、目标 URL、历史或通知内容。禁用账号写入 `status`/`disabled_at`，并立即使该账号全部会话失效。
+
 ## InviteCode
 
 - `id`
@@ -108,7 +110,7 @@ Phase 2 的计数与阈值在探测写回事务内更新；探测语义配置变
 - `created_by`：创建管理员 `app_user.id`
 - `created_at`
 
-名额占用使用条件 UPDATE 原子完成，并发注册不超卖；明文只在创建响应中返回一次。
+名额占用使用条件 UPDATE 原子完成，并发注册不超卖；明文只在创建响应中返回一次。撤销通过写入 `revoked_at` 完成，重复撤销幂等；管理端列表只返回元数据，不返回明文或哈希。
 
 ## PasswordResetToken
 

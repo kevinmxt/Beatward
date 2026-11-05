@@ -4,6 +4,8 @@ import dev.beatward.auth.AccountDisabledException;
 import dev.beatward.auth.AuthValidationException;
 import dev.beatward.auth.InvalidCredentialsException;
 import dev.beatward.auth.InviteCodeException;
+import dev.beatward.auth.InviteCodeNotFoundException;
+import dev.beatward.auth.LastActiveAdminException;
 import dev.beatward.auth.ResetTokenInvalidException;
 import dev.beatward.auth.UnauthenticatedException;
 import dev.beatward.auth.UserNotFoundException;
@@ -107,6 +109,18 @@ public class ApiExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleInviteCode(InviteCodeException ex,
                                                              HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, ex.code(), ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InviteCodeNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleInviteCodeNotFound(InviteCodeNotFoundException ex,
+                                                                     HttpServletRequest request) {
+        return error(HttpStatus.NOT_FOUND, "INVITE_NOT_FOUND", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(LastActiveAdminException.class)
+    public ResponseEntity<ApiErrorResponse> handleLastActiveAdmin(LastActiveAdminException ex,
+                                                                  HttpServletRequest request) {
+        return error(HttpStatus.CONFLICT, "LAST_ACTIVE_ADMIN", ex.getMessage(), request);
     }
 
     @ExceptionHandler(UsernameTakenException.class)

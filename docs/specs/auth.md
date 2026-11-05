@@ -43,8 +43,17 @@
 ### 账号状态
 
 - `DISABLED` 账号登录时，凭据正确返回 403 `ACCOUNT_DISABLED`；凭据错误仍返回 401 `INVALID_CREDENTIALS`，避免向无效密码请求泄露账号状态。
-- 已有会话在下一次请求时被拒绝并失效，返回 403 `ACCOUNT_DISABLED`。
+- 管理员禁用账号时立即失效该用户全部会话；未被主动失效的旧会话在下一次请求时也会被拒绝并返回 403 `ACCOUNT_DISABLED`。
 - 重新启用只恢复登录权限，不修改现有 Monitor 的启用状态。
+
+### 管理员控制台
+
+- 邀请码列表返回备注、最大注册数、已用名额、过期与撤销时间，不返回明文或哈希；撤销通过设置 `revoked_at` 完成，重复撤销幂等，未知邀请码返回 404 `INVITE_NOT_FOUND`。
+- 用户列表只返回账号元数据与监控数量，不返回监控名称、目标 URL、历史或投递内容；管理员默认仍不能读取其他用户的业务数据。
+- 账号状态修改使用 `PATCH /api/v1/admin/users/{id}/status`；禁用前锁定全部启用管理员，禁止禁用最后一个启用 `ADMIN`，冲突返回 409 `LAST_ACTIVE_ADMIN`；状态值非法返回 400 `VALIDATION_ERROR`。
+- 重置码生成沿用一次性明文规则；响应后只保存摘要。
+- 管理员操作写入独立结构化审计日志（`dev.beatward.audit`），字段为 `event`、`actorId`、目标对象 ID、状态与 `traceId`，不记录邀请码、重置码或其他凭据。
+- `/api/v1/admin/**` 仅允许 `ADMIN`；已认证的 `USER` 返回 403 `FORBIDDEN`，未认证返回 401 `UNAUTHORIZED`。
 
 ## 登录与会话
 
