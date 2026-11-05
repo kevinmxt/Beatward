@@ -22,6 +22,9 @@ public class NotificationDeliveryEntity {
     @Column(name = "incident_id", nullable = false)
     private Long incidentId;
 
+    @Column(name = "notification_channel_id")
+    private Long channelId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private NotificationChannel channel;
@@ -59,6 +62,14 @@ public class NotificationDeliveryEntity {
 
     public void setIncidentId(Long incidentId) {
         this.incidentId = incidentId;
+    }
+
+    public Long getChannelId() {
+        return channelId;
+    }
+
+    public void setChannelId(Long channelId) {
+        this.channelId = channelId;
     }
 
     public NotificationChannel getChannel() {

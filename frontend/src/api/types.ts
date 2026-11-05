@@ -124,13 +124,51 @@ export interface Incident {
 
 export interface NotificationDelivery {
   id: number
+  channelId: number | null
   channel: string
+  channelName: string | null
   eventType: string
   status: NotificationDeliveryStatus
   attemptCount: number
   lastAttemptAt: string | null
   sentAt: string | null
   lastErrorSummary: string | null
+}
+
+export type NotificationChannelType = 'PUSHPLUS' | 'XIZHI' | 'EMAIL'
+
+export type ChannelTestStatus = 'SUCCESS' | 'FAILED'
+
+export interface NotificationChannel {
+  id: number
+  type: NotificationChannelType
+  name: string
+  enabled: boolean
+  maskedConfig: string
+  lastTestAt: string | null
+  lastTestStatus: ChannelTestStatus | null
+  lastTestError: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface NotificationChannelInput {
+  type: NotificationChannelType
+  name: string
+  enabled?: boolean
+  config: Record<string, string>
+}
+
+export interface NotificationChannelUpdateInput {
+  name: string
+  enabled?: boolean
+  config?: Record<string, string>
+}
+
+export interface NotificationChannelTestResult {
+  status: ChannelTestStatus
+  message: string | null
+  testedAt: string
 }
 
 export interface IncidentDetail extends Incident {

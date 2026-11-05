@@ -124,10 +124,24 @@ Phase 2 的计数与阈值在探测写回事务内更新；探测语义配置变
 
 明文只在生成响应中返回一次。密码更新与 `used_at` 标记在同一事务内完成，成功后使目标账号全部会话失效。
 
+## NotificationChannel
+
+- `id`
+- `user_id`：归属账号，外键到 `app_user`，`ON DELETE CASCADE`
+- `type`：`PUSHPLUS`、`XIZHI` 或 `EMAIL`
+- `name`：用户可读名称；同一用户同类型同名称唯一
+- `config_ciphertext`：AES-256-GCM 加密后的凭据 JSON；数据库不保存明文
+- `enabled`
+- `last_test_at`、`last_test_status`（`SUCCESS`/`FAILED`）、`last_test_error`
+- `created_at`、`updated_at`
+
+凭据密钥来自 `BEATWARD_CHANNEL_SECRET_KEY`（Base64 32 字节）。存在渠道数据而密钥缺失时应用拒绝启动；密钥需与数据库备份分开离线备份。每用户最多 3 个启用渠道，写入时锁定 `app_user` 行后计数。
+
 ## NotificationDelivery
 - `id`
 - `incident_id`
-- `channel`：`TELEGRAM`
+- `notification_channel_id`：可空，外键到 `notification_channel`，`ON DELETE SET NULL`
+- `channel`：`TELEGRAM`、`PUSHPLUS`、`XIZHI`、`EMAIL`
 - `event_type`：`INCIDENT_OPENED` 或 `INCIDENT_RESOLVED`
 - `status`：`PENDING`、`SENT`、`FAILED`
 - `attempt_count`
@@ -136,7 +150,7 @@ Phase 2 的计数与阈值在探测写回事务内更新；探测语义配置变
 - `sent_at`
 - `last_error_summary`
 
-同一 `incident_id`、`event_type` 与 `channel` 唯一。投递行与 Incident 变更在同一事务内写入；发送在独立事务与调度线程中完成。
+同一 `incident_id`、`event_type` 与 `notification_channel_id` 唯一；`notification_channel_id` 为空的历史 Telegram 行按 `(incident_id, event_type, channel)` 唯一。投递行与 Incident 变更在同一事务内写入；发送在独立事务与调度线程中完成。旧全局 Telegram 仅作为管理员 legacy 渠道保留。
 
 用于追踪通知发送和重试，不得把通知失败与故障状态回滚绑定。投递采用 at-least-once 语义，见 [ADR-0005](../adr/0005-transactional-outbox-notifications.md)。
 

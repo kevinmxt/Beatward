@@ -69,7 +69,10 @@ async function submit(): Promise<void> {
     <header class="page-header">
       <div>
         <h1>设置</h1>
-        <p class="muted">修改管理员密码后，所有会话会失效，需要重新登录。</p>
+        <p class="muted">修改密码后，所有会话会失效，需要重新登录。</p>
+      </div>
+      <div class="page-actions">
+        <RouterLink class="button" to="/settings/notifications">通知渠道</RouterLink>
       </div>
     </header>
 

@@ -6,7 +6,9 @@ import java.time.Instant;
 
 public record NotificationDeliveryResponse(
         Long id,
+        Long channelId,
         String channel,
+        String channelName,
         String eventType,
         String status,
         int attemptCount,
@@ -14,10 +16,13 @@ public record NotificationDeliveryResponse(
         Instant sentAt,
         String lastErrorSummary) {
 
-    public static NotificationDeliveryResponse from(NotificationDeliveryEntity delivery) {
+    public static NotificationDeliveryResponse from(NotificationDeliveryEntity delivery,
+                                                    String channelName) {
         return new NotificationDeliveryResponse(
                 delivery.getId(),
+                delivery.getChannelId(),
                 delivery.getChannel().name(),
+                channelName,
                 delivery.getEventType().name(),
                 delivery.getStatus().name(),
                 delivery.getAttemptCount(),

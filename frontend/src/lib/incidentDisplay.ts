@@ -40,6 +40,9 @@ export function deliveryStatusClass(status: NotificationDeliveryStatus): string 
 
 const CHANNEL_LABELS: Record<string, string> = {
   TELEGRAM: 'Telegram',
+  PUSHPLUS: '推送加',
+  XIZHI: '息知',
+  EMAIL: '邮件',
 }
 
 const EVENT_LABELS: Record<string, string> = {

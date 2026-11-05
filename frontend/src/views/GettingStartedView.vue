@@ -14,7 +14,10 @@ import { authState } from '../auth/session'
     <ol class="getting-started-steps">
       <li>
         <h2>1. 添加通知渠道</h2>
-        <p class="muted">配置 PushPlus、息知或邮箱，确保故障时能收到告警。</p>
+        <p class="muted">
+          在 <RouterLink to="/settings/notifications">通知渠道</RouterLink>
+          配置推送加、息知或邮箱，确保故障时能收到告警。
+        </p>
       </li>
       <li>
         <h2>2. 发送测试通知</h2>
@@ -22,7 +25,9 @@ import { authState } from '../auth/session'
       </li>
       <li>
         <h2>3. 添加首个监控</h2>
-        <p class="muted">监控功能将在账号数据隔离完成后开放，届时可创建 HTTP 或 Heartbeat 监控。</p>
+        <p class="muted">
+          前往 <RouterLink to="/monitors/new">新建监控项</RouterLink>，创建 HTTP 或 Heartbeat 监控。
+        </p>
       </li>
     </ol>
   </section>

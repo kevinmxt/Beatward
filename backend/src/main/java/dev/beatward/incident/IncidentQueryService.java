@@ -3,6 +3,8 @@ package dev.beatward.incident;
 import dev.beatward.common.PageQueries;
 import dev.beatward.monitor.MonitorEntity;
 import dev.beatward.monitor.MonitorRepository;
+import dev.beatward.notification.NotificationChannelEntity;
+import dev.beatward.notification.NotificationChannelRepository;
 import dev.beatward.notification.NotificationDeliveryEntity;
 import dev.beatward.notification.NotificationDeliveryRepository;
 import org.springframework.data.domain.Page;
@@ -22,13 +24,16 @@ public class IncidentQueryService {
     private final IncidentRepository incidentRepository;
     private final MonitorRepository monitorRepository;
     private final NotificationDeliveryRepository notificationDeliveryRepository;
+    private final NotificationChannelRepository notificationChannelRepository;
 
     public IncidentQueryService(IncidentRepository incidentRepository,
                                 MonitorRepository monitorRepository,
-                                NotificationDeliveryRepository notificationDeliveryRepository) {
+                                NotificationDeliveryRepository notificationDeliveryRepository,
+                                NotificationChannelRepository notificationChannelRepository) {
         this.incidentRepository = incidentRepository;
         this.monitorRepository = monitorRepository;
         this.notificationDeliveryRepository = notificationDeliveryRepository;
+        this.notificationChannelRepository = notificationChannelRepository;
     }
 
     @Transactional(readOnly = true)
@@ -65,5 +70,16 @@ public class IncidentQueryService {
     public List<NotificationDeliveryEntity> recentDeliveries(Long incidentId, Long userId) {
         return notificationDeliveryRepository.findRecentForUser(
                 incidentId, userId, PageRequest.of(0, 5));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<Long, String> channelNames(Collection<Long> channelIds, Long userId) {
+        if (channelIds.isEmpty()) {
+            return Map.of();
+        }
+        return notificationChannelRepository.findByIdIn(channelIds).stream()
+                .filter(channel -> channel.getUserId().equals(userId))
+                .collect(Collectors.toMap(NotificationChannelEntity::getId,
+                        NotificationChannelEntity::getName));
     }
 }

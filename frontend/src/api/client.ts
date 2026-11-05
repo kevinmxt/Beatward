@@ -12,6 +12,10 @@ import type {
   LoginResponse,
   Monitor,
   MonitorInput,
+  NotificationChannel,
+  NotificationChannelInput,
+  NotificationChannelTestResult,
+  NotificationChannelUpdateInput,
   PageResponse,
   PasswordChangeInput,
   RegisterInput,
@@ -369,6 +373,44 @@ export function generateResetCode(id: number): Promise<ResetCodeResponse> {
   return request<ResetCodeResponse>(`/api/v1/admin/users/${id}/reset-code`, {
     method: 'POST',
   })
+}
+
+export function listNotificationChannels(
+  page = 0,
+  size = 20,
+): Promise<PageResponse<NotificationChannel>> {
+  return request<PageResponse<NotificationChannel>>(
+    `/api/v1/notification-channels?page=${page}&size=${size}`,
+    { method: 'GET' },
+  )
+}
+
+export function createNotificationChannel(
+  input: NotificationChannelInput,
+): Promise<NotificationChannel> {
+  return jsonRequest<NotificationChannel>('/api/v1/notification-channels', 'POST', input)
+}
+
+export function updateNotificationChannel(
+  id: number,
+  input: NotificationChannelUpdateInput,
+): Promise<NotificationChannel> {
+  return jsonRequest<NotificationChannel>(
+    `/api/v1/notification-channels/${id}`,
+    'PUT',
+    input,
+  )
+}
+
+export function deleteNotificationChannel(id: number): Promise<void> {
+  return request<void>(`/api/v1/notification-channels/${id}`, { method: 'DELETE' })
+}
+
+export function testNotificationChannel(id: number): Promise<NotificationChannelTestResult> {
+  return request<NotificationChannelTestResult>(
+    `/api/v1/notification-channels/${id}/test`,
+    { method: 'POST' },
+  )
 }
 
 export function rotateHeartbeatToken(id: number): Promise<HeartbeatTokenResponse> {

@@ -6,6 +6,7 @@ import dev.beatward.common.PageResponse;
 import dev.beatward.incident.IncidentEntity;
 import dev.beatward.incident.IncidentQueryService;
 import dev.beatward.incident.IncidentStatus;
+import dev.beatward.notification.NotificationDeliveryEntity;
 import dev.beatward.notification.api.NotificationDeliveryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
@@ -56,9 +57,17 @@ public class IncidentController {
     public IncidentDetailResponse get(@PathVariable Long id, Authentication authentication) {
         Long userId = currentUserProvider.requireId(authentication);
         IncidentEntity incident = incidentQueryService.getForUser(id, userId);
-        List<NotificationDeliveryResponse> deliveries = incidentQueryService
-                .recentDeliveries(incident.getId(), userId).stream()
-                .map(NotificationDeliveryResponse::from)
+        List<NotificationDeliveryEntity> recent =
+                incidentQueryService.recentDeliveries(incident.getId(), userId);
+        Map<Long, String> channelNames = incidentQueryService.channelNames(
+                recent.stream().map(NotificationDeliveryEntity::getChannelId)
+                        .filter(java.util.Objects::nonNull)
+                        .toList(), userId);
+        List<NotificationDeliveryResponse> deliveries = recent.stream()
+                .map(delivery -> NotificationDeliveryResponse.from(delivery,
+                        delivery.getChannelId() == null
+                                ? null
+                                : channelNames.get(delivery.getChannelId())))
                 .toList();
         return IncidentDetailResponse.from(incident,
                 incidentQueryService.monitorName(incident.getMonitorId(), userId), deliveries);

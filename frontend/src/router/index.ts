@@ -16,6 +16,7 @@ import MonitorDetailView from '../views/MonitorDetailView.vue'
 import MonitorEditView from '../views/MonitorEditView.vue'
 import MonitorListView from '../views/MonitorListView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
+import NotificationSettingsView from '../views/NotificationSettingsView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ResetPasswordView from '../views/ResetPasswordView.vue'
 import SettingsView from '../views/SettingsView.vue'
@@ -72,6 +73,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },
+  {
+    path: '/settings/notifications',
+    name: 'notification-settings',
+    component: NotificationSettingsView,
+    meta: { requiresAuth: true },
+  },
   {
     path: '/admin/invites',
     name: 'admin-invites',
