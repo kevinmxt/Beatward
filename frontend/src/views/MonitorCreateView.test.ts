@@ -203,6 +203,26 @@ describe('MonitorCreateView', () => {
     expect(wrapper.text()).toContain('30')
   })
 
+  it('shows an actionable message when the monitor quota is exhausted', async () => {
+    createMonitorMock.mockRejectedValue(
+      new ApiError('Monitor quota exceeded: 20 of 20 monitors are already in use.', {
+        code: 'QUOTA_EXCEEDED',
+        status: 409,
+        traceId: 'trace-quota',
+      }),
+    )
+    const { wrapper } = await mountCreate()
+
+    await wrapper.find('#monitor-name').setValue('New API')
+    await wrapper.find('#monitor-url').setValue('https://1.1.1.1/health')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('监控数量已达上限')
+    expect(wrapper.text()).toContain('请先删除不再需要的监控项')
+    expect(wrapper.text()).toContain('trace-quota')
+  })
+
   it('shows the server error code, message and trace id', async () => {
     createMonitorMock.mockRejectedValue(
       new ApiError('name must not be blank', {

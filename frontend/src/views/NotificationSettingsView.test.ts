@@ -4,6 +4,7 @@ import {
   ApiError,
   createNotificationChannel,
   deleteNotificationChannel,
+  getUsage,
   listNotificationChannels,
   testNotificationChannel,
   updateNotificationChannel,
@@ -21,6 +22,7 @@ vi.mock('../api/client', async () => {
     ...actual,
     createNotificationChannel: vi.fn(),
     deleteNotificationChannel: vi.fn(),
+    getUsage: vi.fn(),
     listNotificationChannels: vi.fn(),
     testNotificationChannel: vi.fn(),
     updateNotificationChannel: vi.fn(),
@@ -32,6 +34,7 @@ const createMock = vi.mocked(createNotificationChannel)
 const updateMock = vi.mocked(updateNotificationChannel)
 const deleteMock = vi.mocked(deleteNotificationChannel)
 const testMock = vi.mocked(testNotificationChannel)
+const usageMock = vi.mocked(getUsage)
 
 function channel(overrides: Partial<NotificationChannel> = {}): NotificationChannel {
   return {
@@ -81,6 +84,14 @@ describe('NotificationSettingsView', () => {
     updateMock.mockReset()
     deleteMock.mockReset()
     testMock.mockReset()
+    usageMock.mockReset()
+    usageMock.mockResolvedValue({
+      monitorCount: 0,
+      monitorLimit: 20,
+      enabledChannelCount: 1,
+      channelLimit: 3,
+      hasSuccessfulChannelTest: false,
+    })
   })
 
   it('renders masked credentials and test state', async () => {
@@ -102,6 +113,7 @@ describe('NotificationSettingsView', () => {
     expect(rows[0].text()).toContain('失败')
     expect(rows[0].text()).toContain('HTTP 500')
     expect(rows[1].text()).toContain('邮件')
+    expect(wrapper.text()).toContain('已启用 1 / 3')
 
     wrapper.unmount()
   })

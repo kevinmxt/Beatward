@@ -4,6 +4,7 @@ import {
   ApiError,
   createNotificationChannel,
   deleteNotificationChannel,
+  getUsage,
   listNotificationChannels,
   testNotificationChannel,
   updateNotificationChannel,
@@ -12,6 +13,7 @@ import type {
   NotificationChannel,
   NotificationChannelTestResult,
   NotificationChannelType,
+  Usage,
 } from '../api/types'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import PaginationControls from '../components/PaginationControls.vue'
@@ -59,11 +61,20 @@ const testResult = ref<{
   result: NotificationChannelTestResult
 } | null>(null)
 const pendingDelete = ref<NotificationChannel | null>(null)
+const usage = ref<Usage | null>(null)
 
 const credentialLabel = computed(() => CREDENTIAL_LABELS[type.value])
 const credentialInputType = computed(() =>
   type.value === 'EMAIL' ? 'email' : 'password',
 )
+
+async function loadUsage(): Promise<void> {
+  try {
+    usage.value = await getUsage()
+  } catch {
+    // Keep the last known usage; the channel list remains usable.
+  }
+}
 
 async function load(targetPage = page.value, initial = false): Promise<void> {
   if (initial || targetPage !== page.value) {
@@ -75,6 +86,7 @@ async function load(targetPage = page.value, initial = false): Promise<void> {
     channels.value = result.items
     page.value = result.page
     totalElements.value = result.totalElements
+    void loadUsage()
   } catch (cause) {
     error.value = toErrorDetails(cause)
   } finally {
@@ -260,7 +272,7 @@ onMounted(() => {
       <div>
         <h1>通知渠道</h1>
         <p class="muted">
-          共 {{ totalElements }} 个渠道 · 最多启用 3 个
+          共 {{ totalElements }} 个渠道<span v-if="usage"> · 已启用 {{ usage.enabledChannelCount }} / {{ usage.channelLimit }}</span>
           <RouterLink to="/settings">返回设置</RouterLink>
         </p>
       </div>

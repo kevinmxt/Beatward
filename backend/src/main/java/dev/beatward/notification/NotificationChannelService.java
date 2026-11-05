@@ -26,7 +26,7 @@ import java.util.Map;
 @Service
 public class NotificationChannelService {
 
-    static final int MAX_ENABLED_CHANNELS = 3;
+    public static final int MAX_ENABLED_CHANNELS = 3;
     static final int NAME_MAX_LENGTH = 100;
     static final int ERROR_MAX_LENGTH = 500;
     private static final String TEST_TITLE = "Beatward 通知测试";

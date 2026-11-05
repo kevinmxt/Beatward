@@ -58,7 +58,15 @@
 - 本地 `./mvnw verify`：298 个测试通过，1 个跳过（`RealPushPlusNotificationIT` 需要 `BEATWARD_TEST_PUSHPLUS_TOKEN`），BUILD SUCCESS；前端 `npm test` 197 个测试通过，`npm run build` 成功。
 - 真实 PushPlus/息知/邮件通知证据待设置凭据后补录。
 
+## 4C-5 注册引导与用户端体验
+
+- 新增 `GET /api/v1/usage`，返回当前用户的监控数/上限与启用渠道数/上限，不包含其他账号信息。
+- `/getting-started` 展示用量与三个步骤状态：已启用渠道、任一启用渠道测试成功、已有监控；三个步骤完成后显示完成提示，并可随时进入监控列表。
+- 注册页保留邀请码无效/过期/撤销/用尽与用户名冲突提示；Monitor 创建配额超限显示可操作的中文提示；通知渠道超限提示先禁用或删除其他渠道；渠道测试失败展示服务端摘要。
+- 角色导航与路由守卫保持 `ADMIN` 管理入口仅管理员可见。
+- 证据：`NotificationChannelApiIT`（usage 计数、上限、按用户隔离、未认证 401）；前端 `GettingStartedView.test.ts`（用量、步骤状态、失败渠道、跳转）、`MonitorCreateView.test.ts`（配额提示）、`RegisterView.test.ts`（邀请码错误）、`NotificationSettingsView.test.ts`（渠道上限/测试）、`App.test.ts` 与 `router/index.test.ts`（角色导航与路由）。
+- 本地 `./mvnw verify`：299 个测试通过，1 个跳过（`RealPushPlusNotificationIT` 需要 `BEATWARD_TEST_PUSHPLUS_TOKEN`），BUILD SUCCESS；前端 `npm test` 203 个测试通过，`npm run build` 成功。
+
 ## 待完成
 
-- 4C-5/#122。
 - 真实 PushPlus/息知/邮件告警证据、最终 CI 链接与人工走查记录在 #123 补齐。
