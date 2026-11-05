@@ -24,6 +24,7 @@
 | GET | `/api/v1/admin/users` | 管理员分页查询账号元数据与监控数量 |
 | PATCH | `/api/v1/admin/users/{id}/status` | 管理员启用或禁用账号 |
 | POST | `/api/v1/admin/users/{id}/reset-code` | 管理员为用户生成一次性重置码（明文只返回一次） |
+| GET | `/api/v1/usage` | 查询当前用户的监控与启用渠道用量/上限 |
 | GET | `/api/v1/notification-channels` | 查询当前用户的通知渠道（凭据掩码） |
 | POST | `/api/v1/notification-channels` | 创建 PushPlus、息知或邮件渠道 |
 | PUT | `/api/v1/notification-channels/{id}` | 修改名称、启用状态或轮换凭据 |
@@ -84,6 +85,10 @@ Monitor 的请求与响应包含 `failureThreshold` 与 `recoveryThreshold`（�
 - `POST /api/v1/monitors/{id}/heartbeat-token`：轮换令牌，返回 200 与仅此一次可见的 `heartbeatToken`；旧令牌立即失效；禁用状态仍允许。非心跳类型返回 400 `NOT_HEARTBEAT_MONITOR`；监控项不存在返回 404 `MONITOR_NOT_FOUND`。
 - `DELETE /api/v1/monitors/{id}/heartbeat-token`：撤销令牌，幂等返回 204；禁用状态仍允许；之后上报返回 404。
 - 防护规则的参数与信任边界见 [`heartbeat.md`](heartbeat.md#上报接口)；超限分别返回 429 `RATE_LIMITED`（带 `Retry-After`）、413 `PAYLOAD_TOO_LARGE`、400 `HTTPS_REQUIRED`。
+
+### 用量
+
+`GET /api/v1/usage` 返回当前用户 `{monitorCount, monitorLimit, enabledChannelCount, channelLimit, hasSuccessfulChannelTest}`；上限分别为每账号 20 个 Monitor 与 3 个启用通知渠道，`hasSuccessfulChannelTest` 表示是否存在启用且最近测试成功的渠道。该接口只返回当前用户数据，不包含其他账号信息。
 
 ### 通知渠道
 

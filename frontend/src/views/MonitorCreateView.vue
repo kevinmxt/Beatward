@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { createMonitor } from '../api/client'
+import { ApiError, createMonitor } from '../api/client'
 import type { MonitorInput, MonitorType } from '../api/types'
 import HeartbeatForm from '../components/HeartbeatForm.vue'
 import HeartbeatTokenPanel from '../components/HeartbeatTokenPanel.vue'
@@ -48,10 +48,21 @@ async function create(input: MonitorInput): Promise<void> {
     }
     await router.push(`/monitors/${created.id}`)
   } catch (cause) {
-    serverError.value = toErrorDetails(cause)
+    serverError.value = createError(cause)
   } finally {
     submitting.value = false
   }
+}
+
+function createError(cause: unknown): ErrorDetails {
+  if (cause instanceof ApiError && cause.code === 'QUOTA_EXCEEDED') {
+    return {
+      code: cause.code,
+      message: '监控数量已达上限，请先删除不再需要的监控项。',
+      traceId: cause.traceId,
+    }
+  }
+  return toErrorDetails(cause)
 }
 
 function submitHttp(values: HttpMonitorFormValues): void {

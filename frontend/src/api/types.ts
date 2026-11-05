@@ -52,6 +52,14 @@ export interface ResetCodeResponse {
   expiresAt: string
 }
 
+export interface Usage {
+  monitorCount: number
+  monitorLimit: number
+  enabledChannelCount: number
+  channelLimit: number
+  hasSuccessfulChannelTest: boolean
+}
+
 export interface PageResponse<T> {
   items: T[]
   page: number

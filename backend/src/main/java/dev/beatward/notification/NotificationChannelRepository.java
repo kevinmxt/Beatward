@@ -23,6 +23,8 @@ public interface NotificationChannelRepository
 
     long countByUserIdAndEnabledTrueAndIdNot(Long userId, Long id);
 
+    boolean existsByUserIdAndEnabledTrueAndLastTestStatus(Long userId, ChannelTestStatus status);
+
     List<NotificationChannelEntity> findByIdIn(Collection<Long> ids);
 
     boolean existsByUserIdAndTypeAndName(Long userId, NotificationChannel type, String name);

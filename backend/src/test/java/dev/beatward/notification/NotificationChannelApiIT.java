@@ -8,6 +8,8 @@ import dev.beatward.auth.AccountStatus;
 import dev.beatward.auth.AppRole;
 import dev.beatward.auth.AppUserEntity;
 import dev.beatward.auth.AppUserRepository;
+import dev.beatward.monitor.MonitorService;
+import dev.beatward.monitor.config.MonitorConfigInput;
 import dev.beatward.notification.api.NotificationChannelCreateRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +88,9 @@ class NotificationChannelApiIT {
 
     @Autowired
     NotificationChannelService channelService;
+
+    @Autowired
+    MonitorService monitorService;
 
     @DynamicPropertySource
     static void endpointProperties(DynamicPropertyRegistry registry) {
@@ -232,6 +237,42 @@ class NotificationChannelApiIT {
         mockMvc.perform(get("/api/v1/notification-channels"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+        mockMvc.perform(get("/api/v1/usage"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void reportsCurrentUsageAndLimitsPerUser() throws Exception {
+        AppUserEntity alice = createUser();
+        AppUserEntity bob = createUser();
+        createHeartbeatMonitor(alice);
+        createHeartbeatMonitor(alice);
+        createHeartbeatMonitor(bob);
+        NotificationChannelEntity aliceChannel =
+                createChannel(alice, "alice-push", NotificationChannel.PUSHPLUS);
+        aliceChannel.setLastTestStatus(ChannelTestStatus.SUCCESS);
+        channelRepository.save(aliceChannel);
+        channelService.create(alice.getId(), new NotificationChannelCreateRequest(
+                "PUSHPLUS", "alice-disabled", false, Map.of("token", "disabled-token")));
+        createChannel(bob, "bob-push", NotificationChannel.PUSHPLUS);
+
+        mockMvc.perform(get("/api/v1/usage")
+                        .with(user(alice.getUsername()).roles("USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monitorCount").value(2))
+                .andExpect(jsonPath("$.monitorLimit").value(MonitorService.MAX_MONITORS_PER_USER))
+                .andExpect(jsonPath("$.enabledChannelCount").value(1))
+                .andExpect(jsonPath("$.channelLimit")
+                        .value(NotificationChannelService.MAX_ENABLED_CHANNELS))
+                .andExpect(jsonPath("$.hasSuccessfulChannelTest").value(true));
+
+        mockMvc.perform(get("/api/v1/usage")
+                        .with(user(bob.getUsername()).roles("USER")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.monitorCount").value(1))
+                .andExpect(jsonPath("$.enabledChannelCount").value(1))
+                .andExpect(jsonPath("$.hasSuccessfulChannelTest").value(false));
     }
 
     @Test
@@ -404,6 +445,12 @@ class NotificationChannelApiIT {
         channel.setCreatedAt(now);
         channel.setUpdatedAt(now);
         return channelRepository.save(channel);
+    }
+
+    private void createHeartbeatMonitor(AppUserEntity owner) {
+        monitorService.create(new MonitorConfigInput(
+                "usage-heartbeat", null, null, 300, null, null, null, null, true,
+                null, null, "HEARTBEAT", 60), owner.getId());
     }
 
     private AppUserEntity createUser() {

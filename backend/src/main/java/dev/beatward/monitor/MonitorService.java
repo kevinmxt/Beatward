@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 @Service
 public class MonitorService {
 
-    static final int MAX_MONITORS_PER_USER = 20;
+    public static final int MAX_MONITORS_PER_USER = 20;
 
     private final MonitorRepository repository;
     private final AppUserRepository userRepository;

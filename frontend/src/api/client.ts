@@ -22,6 +22,7 @@ import type {
   ResetCodeResponse,
   ResetPasswordInput,
   SessionInfo,
+  Usage,
 } from './types'
 
 interface ApiErrorEnvelope {
@@ -373,6 +374,10 @@ export function generateResetCode(id: number): Promise<ResetCodeResponse> {
   return request<ResetCodeResponse>(`/api/v1/admin/users/${id}/reset-code`, {
     method: 'POST',
   })
+}
+
+export function getUsage(): Promise<Usage> {
+  return request<Usage>('/api/v1/usage', { method: 'GET' })
 }
 
 export function listNotificationChannels(
