@@ -35,6 +35,7 @@ Beatward 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任�
 | `specs/monitoring.md`        | HTTP 探测行为            | HTTP 监控功能      |
 | `specs/heartbeat.md`         | 定时任务心跳               | Heartbeat 功能   |
 | `specs/incidents.md`         | 故障状态机和通知             | Incident、告警、恢复 |
+| `specs/notifications.md`     | 用户通知渠道、凭据加密、投递与限频 | 通知渠道、告警投递与验收 |
 | `specs/api.md`               | REST API 约定          | 接口设计或修改        |
 | `specs/auth.md`              | 管理账号、登录、会话与 CSRF | 认证、授权与安全边界   |
 | `specs/ui.md`                | 最小可用 UI 行为规范         | UI 开发、评审与验收    |
@@ -50,6 +51,8 @@ Beatward 是面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任�
 | `adr/README.md`              | 架构决策记录规则             | 重大技术决策         |
 | `adr/0010-production-topology-and-trusted-proxy.md` | 生产拓扑、网络边界、可信代理与备份自动化决策 | 部署架构与安全边界 |
 | `adr/0011-rename-to-beatward.md` | 项目全面更名与旧环境迁移决策 | 标识更名、环境迁移与回退 |
+| `adr/0012-invite-only-multiuser-ownership.md` | 邀请制多用户、角色状态与 Monitor 归属 | 多租户、数据隔离与迁移 |
+| `adr/0013-notification-channels-and-credential-encryption.md` | 用户通知渠道、凭据加密与投递限频 | 通知渠道与敏感数据处理 |
 
 ## 规范冲突处理
 

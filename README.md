@@ -2,7 +2,7 @@
 
 面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台。
 
-项目当前处于 **Phase 5A 已完成（本地可验证）、下一阶段 Phase 5B：VPS 上线验收**，Phase 5B 待 VPS 与域名就绪。产品范围、架构约束和验收标准见 [`docs/index.md`](docs/index.md)，Phase 5A 证据见 [`docs/quality/phase5a-acceptance.md`](docs/quality/phase5a-acceptance.md)，Phase 4B 证据见 [`docs/quality/phase4b-acceptance.md`](docs/quality/phase4b-acceptance.md)，Phase 4A 证据见 [`docs/quality/phase4a-acceptance.md`](docs/quality/phase4a-acceptance.md)。
+项目当前处于 **Phase 4C 验收收口**：邀请制多用户、归属隔离、管理员控制台、用户通知渠道与引导已完成，PushPlus 真实通知已验证；阶段收口仍待真实息知/邮件凭据。随后进入 Phase 4D 上线前收尾与 Phase 5B（VPS 上线验收）。产品范围、架构约束和验收标准见 [`docs/index.md`](docs/index.md)，Phase 4C 证据见 [`docs/quality/phase4c-acceptance.md`](docs/quality/phase4c-acceptance.md)，Phase 5A 证据见 [`docs/quality/phase5a-acceptance.md`](docs/quality/phase5a-acceptance.md)，Phase 4B 证据见 [`docs/quality/phase4b-acceptance.md`](docs/quality/phase4b-acceptance.md)，Phase 4A 证据见 [`docs/quality/phase4a-acceptance.md`](docs/quality/phase4a-acceptance.md)。
 
 ## 目录结构
 
@@ -153,6 +153,8 @@ Maven 由 Maven Wrapper 提供，无需单独安装。
 投递与探测各自使用独立的单线程调度器（`probeTickScheduler` / `notificationTickScheduler`），一个 tick 阻塞不会影响另一个；新增 ticker 必须声明自己的调度器，测试会校验非空且全局唯一。
 
 失败重试：网络错误、5xx 与 429 最多尝试 3 次，退避 1 分钟与 5 分钟；非 429 的 4xx 直接进入 `FAILED`。重启后只续发 `PENDING` 投递，已发送的不会重发。
+
+用户级通知渠道支持 PushPlus（微信主）、息知（备用）与邮件（全局 SMTP）；每用户最多 3 个启用渠道，凭据 AES-256-GCM 加密并以掩码展示。Incident 事件会向该用户所有启用渠道各写一条投递，单渠道失败不影响其他渠道；每用户每渠道限频 10 条/分钟、50 条/小时。旧全局 Telegram 仅作为管理员 legacy 通道保留。详见 [`docs/specs/notifications.md`](docs/specs/notifications.md)。
 
 ### 历史数据清理
 

@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-Phase 4A 已完成（CI 与验收证据见 [`quality/phase4a-acceptance.md`](../quality/phase4a-acceptance.md)）；Phase 4B 已完成（证据见 [`quality/phase4b-acceptance.md`](../quality/phase4b-acceptance.md)）；Phase 5A 已完成（本地可验证，证据见 [`quality/phase5a-acceptance.md`](../quality/phase5a-acceptance.md)）。下一阶段为 **Phase 4C：邀请制多用户与国内通知**，完成 Phase 4C/4D 后进入 Phase 5B：VPS 上线验收。
+Phase 4A 已完成（CI 与验收证据见 [`quality/phase4a-acceptance.md`](../quality/phase4a-acceptance.md)）；Phase 4B 已完成（证据见 [`quality/phase4b-acceptance.md`](../quality/phase4b-acceptance.md)）；Phase 5A 已完成（本地可验证，证据见 [`quality/phase5a-acceptance.md`](../quality/phase5a-acceptance.md)）。**Phase 4C 实现与自动化验收已完成，阶段收口待真实息知/邮件通知凭据**（证据见 [`quality/phase4c-acceptance.md`](../quality/phase4c-acceptance.md)）；随后进入 Phase 4D 上线前收尾与 Phase 5B VPS 上线验收。
 
 Phase 4C 的目标用户画像、试用指标与设计决策见 [`plans/phase4c-multiuser-notifications.md`](../plans/phase4c-multiuser-notifications.md)。目标用户画像是待验证假设，不是已确认市场。
 
@@ -93,6 +93,8 @@ Phase 4C 的目标用户画像、试用指标与设计决策见 [`plans/phase4c-
 
 前置条件：Phase 4B 已完成。定位为**邀请制托管试用**，不开放公开注册，不做计费。
 
+状态：4C-1~4C-5 代码与自动化验收完成，4C-6 文档与阶段证据已补齐；PushPlus 真实测试通知与 Incident 告警已验证（2026-11-05），息知与邮件真实发送待凭据后补录。
+
 目标：让 3–5 位目标用户通过邀请码注册，各自拥有隔离的监控数据与通知渠道，并在微信中收到故障与恢复告警。
 
 目标用户画像（待验证，详见 [设计共识](../plans/phase4c-multiuser-notifications.md#目标用户画像)）：
@@ -108,7 +110,7 @@ Phase 4C 的目标用户画像、试用指标与设计决策见 [`plans/phase4c-
 - [x] 管理员邀请码/用户管理 API 与 UI；管理员默认不查看其他用户监控数据
 - [ ] 用户级通知渠道：PushPlus 主、息知备、邮件兜底；可选 IM 后置；凭据加密、测试发送、限频、投递状态
 - [x] 基础配额：每用户 20 个监控（含心跳）、3 个通知渠道、HTTP 探测间隔下限 60 秒
-- [ ] 跨用户越权、邀请码并发、禁用账号、通知路由与失败重试测试
+- [x] 跨用户越权、邀请码并发、禁用账号、通知路由与失败重试测试
 - [x] 现有单管理员数据迁移到 `ADMIN` 归属
 
 完成条件：不同用户不能互读/改/删；邀请码并发注册不超卖；禁用账号无法登录且不再产生探测/告警；PushPlus/息知/邮件测试通知与真实告警可达；配额生效。完成证据建议见 [`quality/phase4c-acceptance.md`](../quality/phase4c-acceptance.md)。
