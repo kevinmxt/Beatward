@@ -57,7 +57,9 @@
 - 证据：`NotificationChannelApiIT`（CRUD、掩码、配额与并发创建、测试发送、跨用户 404、未认证 401、CSRF、限频、无 SMTP 失败）、`MultiChannelNotificationIT`（多渠道展开、单渠道失败隔离、删除渠道与同类型多渠道安全跳过、限频、用户隔离）、`NotificationFlowIT`（legacy Telegram 回归）、`ChannelSecretStartupValidatorTest`、`ChannelSecretCipherTest`、`ChannelConfigValidatorTest`、`NotificationRateLimiterTest`、`EmailNotificationSenderTest`；前端 `NotificationSettingsView.test.ts`、路由与 Incident 展示测试。
 - 本地 `./mvnw verify`：298 个测试，0 失败，1 跳过（真实发送用例；4C-6 起需显式 opt-in），BUILD SUCCESS；前端 `npm test` 197 个测试通过，`npm run build` 成功。
 - 2026-11-05 真实 PushPlus 验收：`RealPushPlusNotificationIT` 2/2 通过，分别验证“渠道测试通知”与“Incident 告警经 outbox → dispatcher 投递”；两次 PushPlus 接口调用均返回成功，投递状态为 `SENT`/`SUCCESS`。接收结果以测试断言与发送方返回为准，未人工截图。Token 从用户环境变量读取，未写入代码、日志或文档。
-- 息知与邮件真实发送未执行（当前无 Key/SMTP 凭据）；对应 sender 已由本地 HTTP mock、`EmailNotificationSenderTest` 与缺失 SMTP 分支覆盖，真实证据待凭据后补录。
+- 2026-11-05 真实息知验收：`RealXizhiNotificationIT` 1/1 通过，渠道测试通知接口返回成功。
+- 2026-11-05 真实邮件验收：`RealEmailNotificationIT` 1/1 通过，使用用户提供的 QQ SMTP 授权码向 163 邮箱发送测试通知，SMTP 返回成功。QQ SMTP 仅用于本次冒烟验证，生产应使用自有域名 + SPF/DKIM 的阿里云 DirectMail 或腾讯云 SES。
+- 三个渠道的真实测试通知均已完成；Incident 真实告警由 PushPlus 全链路验证，息知/邮件走同一 dispatcher 路由并通过自动化测试覆盖。凭据仅从用户环境变量读取，未写入代码、日志、文档或 Git。
 
 ## 4C-5 注册引导与用户端体验
 
@@ -74,11 +76,11 @@
 - 新增 [ADR-0012](../adr/0012-invite-only-multiuser-ownership.md)（邀请制多用户与 Monitor 归属）和 [ADR-0013](../adr/0013-notification-channels-and-credential-encryption.md)（通知渠道与凭据加密）。
 - Phase 4C 各切片已累计更新 `specs/auth.md`、`specs/api.md`、`specs/ui.md`、`architecture/data-model.md`、`architecture/security.md`、`quality/deployment.md`、`README.md`、`.env.example`、`deploy/env.prod.example` 与 `compose.prod.yaml`；本切片补充 `specs/notifications.md`、两份 ADR、`docs/index.md`、`GLOSSARY.md`、路线图与验收文档。
 - 本文件覆盖 4C-1 邀请注册、4C-2 跨用户隔离与迁移、4C-3 管理员控制台、4C-4 通知渠道与投递、4C-5 引导与用量、4C-6 文档与 ADR 的证据映射。
-- 本地最终 `./mvnw verify`：300 个测试，0 失败，2 跳过（`RealPushPlusNotificationIT` 需显式 `BEATWARD_RUN_REAL_NOTIFICATIONS=true`，避免日常验证误发真实消息），BUILD SUCCESS；前端 `npm test` 203 个测试通过，`npm run build` 成功。
+- 本地最终 `./mvnw verify`：302 个测试，0 失败，4 跳过（PushPlus 2 个、息知 1 个、邮件 1 个真实发送用例均需显式 `BEATWARD_RUN_REAL_NOTIFICATIONS=true`，避免日常验证误发），BUILD SUCCESS；前端 `npm test` 203 个测试通过，`npm run build` 成功。`NotificationChannelApiIT` 已显式清空 SMTP 配置，避免本机环境变量泄漏影响“缺少 SMTP”用例。
 - 最终 CI 运行链接在 #123 完成报告记录（PR checks 页面为准）。
 
-## 待完成
+## 限制
 
-- 真实息知与邮件发送证据待用户提供 Key/SMTP 后补录；当前对应 sender 已由本地 HTTP/SMTP mock 与单元测试覆盖。
 - 人工浏览器走查未执行；前端通过组件、路由测试与生产构建验证。
-- Phase 4C 路线图保持“待真实息知/邮件凭据”状态，不提前标记阶段完全完成。
+- 本次邮件验收使用 QQ SMTP 向 163 邮箱发送，仅证明代码链路；生产必须使用自有域名 + SPF/DKIM 的阿里云 DirectMail 或腾讯云 SES，并关注退信与垃圾箱。
+- 息知/邮件的 Incident 告警未分别做真实发送，复用 PushPlus 已验证的 dispatcher 路由，并由 `MultiChannelNotificationIT` 覆盖多渠道展开与隔离。

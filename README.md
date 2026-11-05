@@ -2,7 +2,7 @@
 
 面向个人开发者的轻量级 HTTP/HTTPS API 与后台定时任务心跳监控平台。
 
-项目当前处于 **Phase 4C 验收收口**：邀请制多用户、归属隔离、管理员控制台、用户通知渠道与引导已完成，PushPlus 真实通知已验证；阶段收口仍待真实息知/邮件凭据。随后进入 Phase 4D 上线前收尾与 Phase 5B（VPS 上线验收）。产品范围、架构约束和验收标准见 [`docs/index.md`](docs/index.md)，Phase 4C 证据见 [`docs/quality/phase4c-acceptance.md`](docs/quality/phase4c-acceptance.md)，Phase 5A 证据见 [`docs/quality/phase5a-acceptance.md`](docs/quality/phase5a-acceptance.md)，Phase 4B 证据见 [`docs/quality/phase4b-acceptance.md`](docs/quality/phase4b-acceptance.md)，Phase 4A 证据见 [`docs/quality/phase4a-acceptance.md`](docs/quality/phase4a-acceptance.md)。
+**Phase 4C 已完成**：邀请制多用户、归属隔离、管理员控制台、用户通知渠道（PushPlus/息知/邮件）与引导均已落地，三类渠道的真实测试通知与 PushPlus Incident 告警已验证。下一阶段为 Phase 4D 上线前收尾，随后 Phase 5B（VPS 上线验收）。产品范围、架构约束和验收标准见 [`docs/index.md`](docs/index.md)，Phase 4C 证据见 [`docs/quality/phase4c-acceptance.md`](docs/quality/phase4c-acceptance.md)，Phase 5A 证据见 [`docs/quality/phase5a-acceptance.md`](docs/quality/phase5a-acceptance.md)，Phase 4B 证据见 [`docs/quality/phase4b-acceptance.md`](docs/quality/phase4b-acceptance.md)，Phase 4A 证据见 [`docs/quality/phase4a-acceptance.md`](docs/quality/phase4a-acceptance.md)。
 
 ## 目录结构
 
