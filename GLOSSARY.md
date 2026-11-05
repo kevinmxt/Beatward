@@ -87,18 +87,42 @@ _Avoid_: Alert、Message
 _Avoid_: Notification Log、Send Result
 
 **Notification Channel（通知渠道）**：
-接收通知的外部目的地类型；MVP 仅支持 Telegram。
+用户配置的外部通知目的地；类型为 PushPlus、息知或邮件。旧全局 Telegram 仅作为管理员 legacy 通道。
 _Avoid_: Provider、Integration
+
+**Channel Credential（渠道凭据）**：
+调用渠道所需的敏感凭据，只以密文保存并以掩码展示。
+_Avoid_: Secret、Password
+
+**Enabled Channel（启用渠道）**：
+计入配额且参与 Incident 投递的渠道。
+_Avoid_: Active Channel、Subscribed Channel
+
+**Channel Usage（渠道用量）**：
+当前用户的渠道用量与上限展示。
+_Avoid_: Quota、Limit
 
 ### 认证与数据维护
 
 **Admin Account（管理员账号）**：
-Beatward 中可登录管理界面的身份；MVP 只有一个，未来可以扩展为多个账号与角色。
-_Avoid_: User、Operator、Login
+拥有管理员角色、可访问管理控制台的身份。
+_Avoid_: Operator、Login
 
 **Role（角色）**：
-授予账号的权限类别；MVP 只有 `ADMIN`。
+账号权限类别，取 `ADMIN` 或 `USER`。
 _Avoid_: Permission、Group
+
+**Invite Code（邀请码）**：
+管理员生成的一次性或限量注册凭据。
+_Avoid_: Referral、Coupon
+
+**Account Status（账号状态）**：
+账号的启用状态，取 `ACTIVE` 或 `DISABLED`；禁用账号不能登录，也不参与调度与通知。
+_Avoid_: Locked、Suspended
+
+**Monitor Ownership（监控归属）**：
+Monitor 的 `user_id`；是 CheckResult、Incident、心跳凭证与通知投递的数据隔离根。
+_Avoid_: Tenant、Workspace
 
 **Admin Session（管理会话）**：
 管理员登录后由服务端保存的认证状态，直到登出、空闲超时或绝对期限到达。

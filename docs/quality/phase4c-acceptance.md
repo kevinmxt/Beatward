@@ -1,6 +1,6 @@
 # Phase 4C 验收证据
 
-本文件记录 Phase 4C 各切片的验收证据；完整阶段收口（CI 链接、真实通知证据、恢复演练）在 #123 补齐。
+本文件记录 Phase 4C 各切片的验收证据。PushPlus 真实测试通知与 Incident 告警已验证；息知/邮件真实发送、最终 CI 链接与人工浏览器走查在 #123 完成报告留档。
 
 ## 4C-1 邀请注册与账号状态
 
@@ -55,8 +55,9 @@
 - Incident 入队时展开用户所有启用渠道，单渠道失败不影响其他渠道；渠道删除/禁用后待发送投递安全跳过；每用户每渠道 10 条/分钟、50 条/小时，超限标记失败并记录 WARN。
 - 前端新增 `/settings/notifications`，支持添加/编辑/启停/测试/删除渠道；Incident 投递记录展示渠道名称。
 - 证据：`NotificationChannelApiIT`（CRUD、掩码、配额与并发创建、测试发送、跨用户 404、未认证 401、CSRF、限频、无 SMTP 失败）、`MultiChannelNotificationIT`（多渠道展开、单渠道失败隔离、删除渠道与同类型多渠道安全跳过、限频、用户隔离）、`NotificationFlowIT`（legacy Telegram 回归）、`ChannelSecretStartupValidatorTest`、`ChannelSecretCipherTest`、`ChannelConfigValidatorTest`、`NotificationRateLimiterTest`、`EmailNotificationSenderTest`；前端 `NotificationSettingsView.test.ts`、路由与 Incident 展示测试。
-- 本地 `./mvnw verify`：298 个测试通过，1 个跳过（`RealPushPlusNotificationIT` 需要 `BEATWARD_TEST_PUSHPLUS_TOKEN`），BUILD SUCCESS；前端 `npm test` 197 个测试通过，`npm run build` 成功。
-- 真实 PushPlus/息知/邮件通知证据待设置凭据后补录。
+- 本地 `./mvnw verify`：298 个测试，0 失败，1 跳过（真实发送用例；4C-6 起需显式 opt-in），BUILD SUCCESS；前端 `npm test` 197 个测试通过，`npm run build` 成功。
+- 2026-11-05 真实 PushPlus 验收：`RealPushPlusNotificationIT` 2/2 通过，分别验证“渠道测试通知”与“Incident 告警经 outbox → dispatcher 投递”；两次 PushPlus 接口调用均返回成功，投递状态为 `SENT`/`SUCCESS`。接收结果以测试断言与发送方返回为准，未人工截图。Token 从用户环境变量读取，未写入代码、日志或文档。
+- 息知与邮件真实发送未执行（当前无 Key/SMTP 凭据）；对应 sender 已由本地 HTTP mock、`EmailNotificationSenderTest` 与缺失 SMTP 分支覆盖，真实证据待凭据后补录。
 
 ## 4C-5 注册引导与用户端体验
 
@@ -65,8 +66,19 @@
 - 注册页保留邀请码无效/过期/撤销/用尽与用户名冲突提示；Monitor 创建配额超限显示可操作的中文提示；通知渠道超限提示先禁用或删除其他渠道；渠道测试失败展示服务端摘要。
 - 角色导航与路由守卫保持 `ADMIN` 管理入口仅管理员可见。
 - 证据：`NotificationChannelApiIT`（usage 计数、上限、按用户隔离、未认证 401）；前端 `GettingStartedView.test.ts`（用量、步骤状态、失败渠道、跳转）、`MonitorCreateView.test.ts`（配额提示）、`RegisterView.test.ts`（邀请码错误）、`NotificationSettingsView.test.ts`（渠道上限/测试）、`App.test.ts` 与 `router/index.test.ts`（角色导航与路由）。
-- 本地 `./mvnw verify`：299 个测试通过，1 个跳过（`RealPushPlusNotificationIT` 需要 `BEATWARD_TEST_PUSHPLUS_TOKEN`），BUILD SUCCESS；前端 `npm test` 203 个测试通过，`npm run build` 成功。
+- 本地 `./mvnw verify`：299 个测试，0 失败，1 跳过（真实发送用例；当时尚未加入显式 opt-in），BUILD SUCCESS；前端 `npm test` 203 个测试通过，`npm run build` 成功。
+
+## 4C-6 文档、ADR 与阶段验收
+
+- 新增 [`specs/notifications.md`](../specs/notifications.md)，覆盖渠道类型、凭据加密、测试发送、投递路由、限频、隐私与验收映射。
+- 新增 [ADR-0012](../adr/0012-invite-only-multiuser-ownership.md)（邀请制多用户与 Monitor 归属）和 [ADR-0013](../adr/0013-notification-channels-and-credential-encryption.md)（通知渠道与凭据加密）。
+- Phase 4C 各切片已累计更新 `specs/auth.md`、`specs/api.md`、`specs/ui.md`、`architecture/data-model.md`、`architecture/security.md`、`quality/deployment.md`、`README.md`、`.env.example`、`deploy/env.prod.example` 与 `compose.prod.yaml`；本切片补充 `specs/notifications.md`、两份 ADR、`docs/index.md`、`GLOSSARY.md`、路线图与验收文档。
+- 本文件覆盖 4C-1 邀请注册、4C-2 跨用户隔离与迁移、4C-3 管理员控制台、4C-4 通知渠道与投递、4C-5 引导与用量、4C-6 文档与 ADR 的证据映射。
+- 本地最终 `./mvnw verify`：300 个测试，0 失败，2 跳过（`RealPushPlusNotificationIT` 需显式 `BEATWARD_RUN_REAL_NOTIFICATIONS=true`，避免日常验证误发真实消息），BUILD SUCCESS；前端 `npm test` 203 个测试通过，`npm run build` 成功。
+- 最终 CI 运行链接在 #123 完成报告记录（PR checks 页面为准）。
 
 ## 待完成
 
-- 真实 PushPlus/息知/邮件告警证据、最终 CI 链接与人工走查记录在 #123 补齐。
+- 真实息知与邮件发送证据待用户提供 Key/SMTP 后补录；当前对应 sender 已由本地 HTTP/SMTP mock 与单元测试覆盖。
+- 人工浏览器走查未执行；前端通过组件、路由测试与生产构建验证。
+- Phase 4C 路线图保持“待真实息知/邮件凭据”状态，不提前标记阶段完全完成。
