@@ -35,7 +35,15 @@ describe('app navigation and authentication', () => {
     setUnauthorizedHandler(null)
   })
 
-  it('shows the monitor and incident navigation links', async () => {
+  it('shows the monitor, incident and admin navigation links for administrators', async () => {
+    const { wrapper } = await mountAt('/monitors')
+    const links = wrapper.findAll('nav a').map((link) => link.text())
+
+    expect(links).toEqual(['监控项', 'Incidents', '邀请码', '用户管理'])
+  })
+
+  it('hides admin navigation links from regular users', async () => {
+    authenticateForTest('alice', 'csrf-1', 'USER')
     const { wrapper } = await mountAt('/monitors')
     const links = wrapper.findAll('nav a').map((link) => link.text())
 

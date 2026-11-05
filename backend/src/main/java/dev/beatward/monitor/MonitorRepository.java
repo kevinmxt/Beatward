@@ -53,6 +53,20 @@ public interface MonitorRepository extends JpaRepository<MonitorEntity, Long> {
 
     long countByUserId(Long userId);
 
+    @Query("""
+            select m.userId as userId, count(m) as total
+            from MonitorEntity m
+            where m.userId in :userIds
+            group by m.userId
+            """)
+    List<UserMonitorCount> countByUserIds(@Param("userIds") Collection<Long> userIds);
+
+    interface UserMonitorCount {
+        Long getUserId();
+
+        long getTotal();
+    }
+
     List<MonitorEntity> findAllByIdInAndUserId(Collection<Long> ids, Long userId);
 
     Optional<MonitorEntity> findByIdAndUserId(Long id, Long userId);

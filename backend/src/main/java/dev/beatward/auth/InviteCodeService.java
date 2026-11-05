@@ -1,5 +1,8 @@
 package dev.beatward.auth;
 
+import dev.beatward.common.PageQueries;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,6 +58,20 @@ public class InviteCodeService {
         invite.setCreatedBy(createdBy);
         invite.setCreatedAt(now);
         return new CreatedInviteCode(repository.save(invite), code);
+    }
+
+    public Page<InviteCodeEntity> list(int page, int size) {
+        return repository.findAll(PageQueries.of(page, size, Sort.by("id").descending()));
+    }
+
+    @Transactional
+    public InviteCodeEntity revoke(Long id) {
+        InviteCodeEntity invite = repository.findById(id)
+                .orElseThrow(() -> new InviteCodeNotFoundException(id));
+        if (invite.getRevokedAt() == null) {
+            invite.setRevokedAt(clock.instant());
+        }
+        return invite;
     }
 
     public InviteCodeEntity requireUsable(String rawCode, Instant now) {

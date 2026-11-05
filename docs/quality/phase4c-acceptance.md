@@ -37,7 +37,17 @@
 - 证据：`MonitorOwnershipMigrationIT`（NOT NULL、HTTP 间隔归一、迁移后拒绝空归属与低于 60 秒的 HTTP 间隔）、`MonitorQuotaIT`（混合类型计数、按用户隔离、30 并发创建仅 20 个成功）、`MonitorApiIT`（409 错误与可操作消息）、`MonitorConfigValidatorTest`（60 秒边界）、`AccountActivityTest`（空归属与禁用账号判定）；同步更新 `MonitorRepositoryIT`、探测/清理/重启等测试的归属数据准备。
 - 本地 `./mvnw verify` 267 个测试通过，BUILD SUCCESS；前端 `npm test` 176 个测试通过，`npm run build` 成功。
 
+## 4C-3 管理员控制台与用户管理
+
+- 新增 `GET /api/v1/admin/invite-codes`、`POST /api/v1/admin/invite-codes/{id}/revoke`、`GET /api/v1/admin/users`、`PATCH /api/v1/admin/users/{id}/status`；沿用一次性重置码接口。
+- 邀请码列表不含明文或哈希，撤销幂等；用户列表只返回账号元数据与监控数量，不含监控内容。
+- 禁用账号立即失效其全部会话；锁定启用管理员后再修改状态，禁止禁用最后一个启用管理员，冲突返回 409 `LAST_ACTIVE_ADMIN`。
+- 管理员操作写入 `dev.beatward.audit` 结构化日志，覆盖邀请码创建/撤销、账号状态变更与重置码生成，不记录明文码。
+- 前端新增 `/admin/invites`、`/admin/users`，`ADMIN` 导航显示管理入口，`USER` 不显示且路由守卫重定向到 `/monitors`。
+- 证据：`AdminConsoleApiIT` 12 个用例（列表字段脱敏、撤销幂等、监控数量、禁用即失效会话、未认证 401、`USER` 越权 403、多管理员与并发禁用保护、状态校验、审计日志）；`AdminInvitesView.test.ts`、`AdminUsersView.test.ts`、`router/index.test.ts`、`App.test.ts`（管理页渲染与操作、角色导航与路由拒绝）。
+- 本地 `./mvnw verify` 279 个测试通过，BUILD SUCCESS；前端 `npm test` 189 个测试通过，`npm run build` 成功。
+
 ## 待完成
 
-- 4C-3/#120、4C-4/#121、4C-5/#122。
+- 4C-4/#121、4C-5/#122。
 - 最终 CI 链接、真实 PushPlus/息知/邮件告警证据与人工走查记录在 #123 补齐。

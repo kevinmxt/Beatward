@@ -21,6 +21,10 @@ async function handleLogout(): Promise<void> {
       <nav class="app-nav">
         <RouterLink to="/monitors">监控项</RouterLink>
         <RouterLink to="/incidents">Incidents</RouterLink>
+        <template v-if="authState.role === 'ADMIN'">
+          <RouterLink to="/admin/invites">邀请码</RouterLink>
+          <RouterLink to="/admin/users">用户管理</RouterLink>
+        </template>
       </nav>
       <div class="app-user">
         <span class="inline-label">{{ authState.username }}</span>
