@@ -34,3 +34,6 @@ backups/
 /.deployed-tag
 /.previous-tag
 /.deployed-tags/
+
+# Windows 宿主本地运维脚本（Multipass hosts 等，不属于交付内容）
+/tools/local/
