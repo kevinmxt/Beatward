@@ -24,7 +24,7 @@ function invite(overrides: Partial<InviteCode> = {}): InviteCode {
     label: 'batch-1',
     maxUses: 3,
     usedCount: 1,
-    expiresAt: '2026-11-12T00:00:00Z',
+    expiresAt: '2099-01-01T00:00:00Z',
     revokedAt: null,
     createdAt: '2026-11-05T00:00:00Z',
     ...overrides,

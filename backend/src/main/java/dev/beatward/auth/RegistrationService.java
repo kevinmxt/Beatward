@@ -30,7 +30,7 @@ public class RegistrationService {
     public AppUserEntity register(String rawInviteCode, String rawUsername, String rawPassword) {
         String username = normalizedUsername(rawUsername);
         if (!PasswordRules.isValid(rawPassword)) {
-            throw new AuthValidationException("password must be 12-128 characters");
+            throw new AuthValidationException("password must be 10-32 characters");
         }
 
         Instant now = clock.instant();

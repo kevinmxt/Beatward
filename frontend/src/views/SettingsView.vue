@@ -6,8 +6,8 @@ import { changePassword } from '../auth/session'
 import ServerErrorPanel from '../components/ServerErrorPanel.vue'
 import { toErrorDetails, type ErrorDetails } from '../lib/apiError'
 
-const MIN_PASSWORD_LENGTH = 12
-const MAX_PASSWORD_LENGTH = 128
+const MIN_PASSWORD_LENGTH = 10
+const MAX_PASSWORD_LENGTH = 32
 const passwordRuleHint = `${MIN_PASSWORD_LENGTH}–${MAX_PASSWORD_LENGTH} 个字符`
 
 const router = useRouter()

@@ -59,7 +59,7 @@ ls /opt/beatward/backend/src/main/java/dev/beatward/monitor/target/
 
 ## 步骤 2：生成引导管理员密码哈希
 
-首次启动且 `app_user` 为空时，应用用 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 建号，格式必须为 `{bcrypt}$2...`（成本 12，密码 12–128 字符）：
+首次启动且 `app_user` 为空时，应用用 `BEATWARD_AUTH_BOOTSTRAP_PASSWORD_HASH` 建号，格式必须为 `{bcrypt}$2...`（成本 12，密码 10–32 字符）：
 
 ```bash
 docker run --rm httpd:2.4-alpine \

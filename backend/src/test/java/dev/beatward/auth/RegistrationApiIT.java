@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -111,6 +112,7 @@ class RegistrationApiIT {
 
         String code = objectMapper.readTree(result.getResponse().getContentAsString())
                 .get("code").asText();
+        assertThat(code).hasSize(8);
         assertThat(inviteCodeRepository.findByCodeHash(sha256(code))).isPresent();
         assertThat(inviteCodeRepository.findAll())
                 .noneSatisfy(invite -> assertThat(invite.getCodeHash()).isEqualTo(code));
@@ -142,6 +144,19 @@ class RegistrationApiIT {
         assertThat(user.getLastLoginAt()).isNotNull();
         InviteCodeEntity inviteRow = inviteCodeRepository.findByCodeHash(sha256(invite)).orElseThrow();
         assertThat(inviteRow.getUsedCount()).isEqualTo(1);
+    }
+
+    @Test
+    void registerAcceptsLowercaseInviteCodeWithSeparators() throws Exception {
+        String invite = newInvite(1);
+        String typed = invite.substring(0, 4).toLowerCase(Locale.ROOT) + "-"
+                + invite.substring(4).toLowerCase(Locale.ROOT);
+        String username = uniqueUsername("normalized-invite");
+
+        mockMvc.perform(registerRequest(typed, username, USER_PASSWORD,
+                        bootstrapCsrf(), "10.10.0.16"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.username").value(username));
     }
 
     @Test

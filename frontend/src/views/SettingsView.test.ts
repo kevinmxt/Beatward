@@ -58,7 +58,7 @@ describe('SettingsView', () => {
     const { wrapper } = await mountSettings()
 
     await fillForm(wrapper, 'old-password-123', 'short', 'short')
-    expect(wrapper.text()).toContain('12–128 个字符')
+    expect(wrapper.text()).toContain('10–32 个字符')
 
     await fillForm(wrapper, 'old-password-123', 'new-password-123', 'different-password')
     expect(wrapper.text()).toContain('两次输入的新密码不一致')
