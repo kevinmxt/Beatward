@@ -13,6 +13,10 @@ import java.util.HexFormat;
 public class SecureTokenGenerator {
 
     private static final int TOKEN_BYTES = 32;
+    private static final int INVITE_CODE_LENGTH = 8;
+    // Crockford Base32: no I, L, O or U, so codes stay unambiguous when typed.
+    private static final char[] INVITE_CODE_ALPHABET =
+            "0123456789ABCDEFGHJKMNPQRSTVWXYZ".toCharArray();
 
     private final SecureRandom random = new SecureRandom();
 
@@ -20,6 +24,14 @@ public class SecureTokenGenerator {
         byte[] bytes = new byte[TOKEN_BYTES];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    public String generateInviteCode() {
+        char[] code = new char[INVITE_CODE_LENGTH];
+        for (int i = 0; i < code.length; i++) {
+            code[i] = INVITE_CODE_ALPHABET[random.nextInt(INVITE_CODE_ALPHABET.length)];
+        }
+        return new String(code);
     }
 
     public String digest(String token) {

@@ -184,7 +184,7 @@ public class AuthController {
             throw new InvalidCurrentPasswordException();
         }
         if (!PasswordRules.isValid(newPassword)) {
-            throw new InvalidNewPasswordException("new password must be 12-128 characters");
+            throw new InvalidNewPasswordException("new password must be 10-32 characters");
         }
         if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
             throw new InvalidNewPasswordException("new password must differ from the current password");

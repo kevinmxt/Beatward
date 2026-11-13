@@ -4,8 +4,8 @@ import { useRouter } from 'vue-router'
 import { resetPassword } from '../auth/session'
 import { resetPasswordErrorMessage } from '../lib/authError'
 
-const MIN_PASSWORD_LENGTH = 12
-const MAX_PASSWORD_LENGTH = 128
+const MIN_PASSWORD_LENGTH = 10
+const MAX_PASSWORD_LENGTH = 32
 
 const router = useRouter()
 const resetCode = ref('')

@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
 @Service
 public class InviteCodeService {
@@ -48,7 +49,7 @@ public class InviteCodeService {
         }
 
         Instant now = clock.instant();
-        String code = tokenGenerator.generate();
+        String code = tokenGenerator.generateInviteCode();
         InviteCodeEntity invite = new InviteCodeEntity();
         invite.setCodeHash(tokenGenerator.digest(code));
         invite.setLabel(label);
@@ -75,8 +76,7 @@ public class InviteCodeService {
     }
 
     public InviteCodeEntity requireUsable(String rawCode, Instant now) {
-        String code = rawCode == null ? "" : rawCode.strip();
-        InviteCodeEntity invite = repository.findByCodeHash(tokenGenerator.digest(code))
+        InviteCodeEntity invite = findByCode(rawCode)
                 .orElseThrow(InviteCodeException::invalid);
         if (invite.getRevokedAt() != null) {
             throw InviteCodeException.revoked();
@@ -88,6 +88,31 @@ public class InviteCodeService {
             throw InviteCodeException.exhausted();
         }
         return invite;
+    }
+
+    private Optional<InviteCodeEntity> findByCode(String rawCode) {
+        String code = rawCode == null ? "" : rawCode.strip();
+        Optional<InviteCodeEntity> exact = repository.findByCodeHash(tokenGenerator.digest(code));
+        if (exact.isPresent()) {
+            return exact;
+        }
+        String normalized = normalizeInviteCode(code);
+        if (normalized.equals(code)) {
+            return Optional.empty();
+        }
+        return repository.findByCodeHash(tokenGenerator.digest(normalized));
+    }
+
+    private static String normalizeInviteCode(String code) {
+        StringBuilder normalized = new StringBuilder(code.length());
+        for (int i = 0; i < code.length(); i++) {
+            char c = code.charAt(i);
+            if (c == '-' || Character.isWhitespace(c)) {
+                continue;
+            }
+            normalized.append(Character.toUpperCase(c));
+        }
+        return normalized.toString();
     }
 
     public boolean consume(InviteCodeEntity invite, Instant now) {

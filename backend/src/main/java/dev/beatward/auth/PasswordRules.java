@@ -2,8 +2,8 @@ package dev.beatward.auth;
 
 public final class PasswordRules {
 
-    static final int MIN_LENGTH = 12;
-    static final int MAX_LENGTH = 128;
+    static final int MIN_LENGTH = 10;
+    static final int MAX_LENGTH = 32;
 
     private PasswordRules() {
     }

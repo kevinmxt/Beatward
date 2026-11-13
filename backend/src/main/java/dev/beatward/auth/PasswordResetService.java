@@ -49,7 +49,7 @@ public class PasswordResetService {
     @Transactional
     public ResetResult reset(String rawCode, String rawPassword) {
         if (!PasswordRules.isValid(rawPassword)) {
-            throw new AuthValidationException("password must be 12-128 characters");
+            throw new AuthValidationException("password must be 10-32 characters");
         }
         String code = rawCode == null ? "" : rawCode.strip();
         Instant now = clock.instant();
