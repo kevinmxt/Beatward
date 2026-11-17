@@ -107,3 +107,20 @@ Phase 3 已完成，可以进入 Phase 4A（最小可用 UI）。代码整体质
 - 本次未独立运行 Docker VM、Maven/前端测试或真实灾备演练；测试与 VM 结果均明确引用仓库现有 `docs/quality/phase5a-acceptance.md` 证据。
 - **历史报告保留：** Phase 1、2、3、4A、4B 原有报告和索引内容均保留；本次仅新增 Phase 5A 三份报告并在 README 末尾追加本节。
 
+
+
+# Beatward Phase 4C 审阅资料
+
+## 阅读顺序
+
+1. [`phase4c-review.md`](phase4c-review.md)：邀请制多用户、归属隔离、配额、账号状态与通知渠道代码审阅。
+2. [`phase4c-roadmap-notes.md`](phase4c-roadmap-notes.md)：Phase 4D 上线前收尾的优先级与路线建议。
+3. [`phase4c-remediation.md`](phase4c-remediation.md)：限频器容量、禁用竞态和审计补齐的任务与验收清单。
+
+## 审阅范围与结论
+
+- 审阅对象：本次上传的 `Beatward-master.zip` 源码快照（项目已由 PulseOps 更名为 Beatward）。
+- Phase 4C 核心实现与仓库验收记录基本吻合；静态审阅未发现明确的跨租户越权路径，阶段可收口并进入 Phase 4D。
+- 建议 Phase 4D 跟进：通知限频器键数量严格有界、明确账号禁用与在途任务的竞态语义、补齐渠道变更/登录失败审计事件。
+- 本次未能独立运行 Maven、Testcontainers、前端测试/构建或 Docker 验收：Maven Wrapper 下载因网络失败，Docker 不可用，Node.js 22.16.0 与项目要求的 24.15.0 不一致。仓库已有的 302 后端测试、203 前端测试与真实通知证据仅作为历史验收记录引用。
+- **历史报告保留：** Phase 1、2、3、4A、4B、5A 的报告与原有 README 内容均保留；本次仅新增 Phase 4C 三份报告，并在 README 末尾追加本节。历史标题继续保留 PulseOps，作为更名前的审阅记录。
